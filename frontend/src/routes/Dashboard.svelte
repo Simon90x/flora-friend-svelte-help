@@ -1,8 +1,8 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, getContext } from 'svelte';
+  import { user, page, selectedPlant } from '../lib/stores/index.js';
   import { supabase } from '../lib/services/supabaseClient.js';
-  import { user } from '../lib/stores/index.js';
-  import { link } from 'svelte-spa-router'; // Usiamo 'link' per la navigazione programmatica
+  import { mockApi } from '../lib/services/mockData.js';
 
   import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
@@ -18,24 +18,28 @@
   let error = '';
   let isModalOpen = false;
 
-  onMount(fetchPlants);
+  onMount(() => {
+    loadPlants();
+  });
 
-  async function fetchPlants() {
+  async function loadPlants() {
     isLoading = true;
     error = '';
-    // La modalità Demo ora viene gestita a livello di API mockata o con policy RLS specifiche
-    if ($user.id === 'demo-user') {
-      loadDemoPlants();
-      return;
-    }
-    
     try {
-      const { data, error: fetchError } = await supabase
-        .from('plants')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
+      let data;
+      if ($user.id === 'demo-user') {
+        // Usa il servizio mock per la demo
+        data = await mockApi.getPlants();
+      } else {
+        // Logica originale per utenti reali
+        const { data: realData, error: fetchError } = await supabase
+          .from('plants')
+          .select('*')
+          .eq('user_id', $user.id)
+          .order('created_at', { ascending: false });
+        if (fetchError) throw fetchError;
+        data = realData;
+      }
       plants = data || [];
     } catch (e) {
       error = 'Impossibile caricare le piante: ' + e.message;
@@ -44,14 +48,13 @@
     }
   }
 
-  function loadDemoPlants() {
-      isLoading = false;
-      plants = [
-        { id: 'demo1', name: 'Monstera Deliciosa', species: 'Araceae', cover_image_url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400', notes: 'Pianta demo molto bella.' },
-        { id: 'demo2', name: 'Sansevieria', species: 'Trifasciata', cover_image_url: 'https://images.unsplash.com/photo-1592157379799-994629e4874b?w=400', notes: 'Pianta demo resistente.' },
-      ];
+  function handleNavigateToDetail(event) {
+    const plant = event.detail.plant;
+    selectedPlant.set(plant);
+    $page = 'plantDetail';
   }
 
+  // La funzione di logout è gestita solo dalla Sidebar
 </script>
 
 <div class="max-w-7xl mx-auto">
@@ -66,7 +69,7 @@
   <Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
     <AddPlantForm
       on:close={() => isModalOpen = false}
-      onSuccess={fetchPlants}
+      onSuccess={loadPlants}
     />
   </Modal>
 
@@ -85,14 +88,14 @@
       actionText="Aggiungi la tua prima pianta"
       on:actionClick={() => isModalOpen = true}
     >
-      <LeafIcon slot="icon" class="w-24 h-24" />
+      <svelte:fragment slot="icon">
+        <LeafIcon class="w-24 h-24" />
+      </svelte:fragment>
     </EmptyState>
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each plants as plant (plant.id)}
-        <a href="/plant/{plant.id}" use:link>
-          <PlantCard {plant} />
-        </a>
+        <PlantCard {plant} on:navigateToDetail={handleNavigateToDetail} />
       {/each}
     </div>
   {/if}

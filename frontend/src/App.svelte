@@ -1,67 +1,61 @@
 <script>
   import { onMount } from 'svelte';
-  import { user, isSidebarOpen } from './lib/stores/index.js';
+  import { user, page, isSidebarOpen } from './lib/stores/index.js';
   import { supabase } from './lib/services/supabaseClient.js';
-  import Router, { push, location } from 'svelte-spa-router';
-  import { routes } from './routes.js';
 
+  // Importa le viste
+  import Login from './routes/Login.svelte';
+  import Register from './routes/Register.svelte';
+  import Dashboard from './routes/Dashboard.svelte';
+  import PlantDetail from './routes/PlantDetail.svelte';
+  // Importa la nuova vista UserProfile
+  import UserProfile from './routes/UserProfile.svelte';
+
+  // Importa il layout
   import Sidebar from './lib/components/layout/Sidebar.svelte';
-
-  let currentRoute;
-
-  // Lista delle route che non richiedono autenticazione
-  const publicRoutes = ['/', '/login', '/register'];
 
   onMount(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null;
-      user.set(currentUser);
-
-      const isPublicRoute = publicRoutes.includes(location.pathname);
+      // Non modificare l'utente se siamo in demo mode
+      if ($user?.id === 'demo-user') return;
       
-      if (!currentUser && !isPublicRoute) {
-        // Se l'utente non è loggato e si trova in una rotta protetta, reindirizza al login
-        push('/login');
-      } else if (currentUser && isPublicRoute) {
-        // Se l'utente è loggato e si trova in una rotta pubblica, reindirizza alla dashboard
-        push('/dashboard');
+      user.set(session?.user ?? null);
+      if (!session?.user) {
+        page.set('login');
+      } else if ($page === 'login' || $page === 'register') {
+        page.set('dashboard');
       }
     });
-
     return () => authListener.subscription.unsubscribe();
   });
 
+  // Funzione per chiudere la sidebar mobile
   function closeSidebar() {
     isSidebarOpen.set(false);
   }
-
-  // Wrapper per il router per gestire le route protette
-  function routeGuard(detail) {
-    const { route } = detail;
-    const isPublic = publicRoutes.some(r => route.startsWith(r));
-
-    if (!$user && !isPublic) {
-      // Blocco navigazione verso route protette se non loggato
-      return false;
-    }
-    currentRoute = route;
-    return true; // Permetti la navigazione
-  }
 </script>
 
-<main class="font-sans antialiased">
+<main class="font-sans antialiased text-gray-900 dark:text-gray-100">
   {#if $user === undefined}
     <div class="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
       <p class="text-xl text-gray-500">Caricamento Flora Friend...</p>
     </div>
+
   {:else if !$user}
-    <!-- Layout Autenticazione: router per pagine pubbliche -->
+    <!-- Layout Autenticazione: centrato -->
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-      <Router {routes} on:routeLoaded={routeGuard} />
+      {#if $page === 'login'}
+        <Login />
+      {:else if $page === 'register'}
+        <Register />
+      {/if}
     </div>
+
   {:else}
     <!-- Layout Applicazione Principale -->
     <div class="relative min-h-screen lg:flex">
+      
+      <!-- Sidebar Mobile (a comparsa) -->
       {#if $isSidebarOpen}
         <div 
           class="fixed inset-0 bg-black/50 z-30 lg:hidden" 
@@ -75,20 +69,32 @@
         </div>
       {/if}
 
-      <div class="hidden lg:block lg:flex-shrink-0">
+      <!-- Sidebar Desktop (fissa) -->
+      <aside class="hidden lg:block lg:flex-shrink-0">
         <Sidebar />
-      </div>
+      </aside>
 
-      <div class="flex-1 bg-gray-100 dark:bg-gray-900">
-        <header class="lg:hidden sticky top-0 bg-white dark:bg-gray-800/80 backdrop-blur-sm shadow-sm p-4 z-20 flex items-center">
-            <button on:click={() => isSidebarOpen.set(true)} aria-label="Apri menu" class="text-gray-600 dark:text-gray-300">
+      <!-- Contenuto Principale -->
+      <div class="flex-1 bg-gray-100 dark:bg-gray-800">
+        <!-- Header Mobile -->
+        <header class="lg:hidden sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm p-4 z-20 flex items-center">
+            <button on:click={() => isSidebarOpen.set(true)} aria-label="Apri menu" class="text-gray-700 dark:text-gray-200">
+                <!-- Icona Hamburger -->
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
             <span class="ml-4 font-bold text-lg text-green-600">FloraFriend</span>
         </header>
 
+        <!-- Contenitore della Vista Attiva -->
         <div class="p-4 sm:p-6 lg:p-8">
-          <Router {routes} on:routeLoaded={routeGuard} />
+          {#if $page === 'dashboard'}
+            <Dashboard />
+          {:else if $page === 'plantDetail'}
+            <PlantDetail />
+          {:else if $page === 'profile'}
+            <!-- Corretto: punta a UserProfile -->
+            <UserProfile />
+          {/if}
         </div>
       </div>
     </div>

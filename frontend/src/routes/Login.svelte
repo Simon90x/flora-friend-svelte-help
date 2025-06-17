@@ -28,7 +28,7 @@
   function handleDemoLogin() {
     user.set({
       id: 'demo-user',
-      email: 'demo@example.com',
+      email: 'demo@xxx.com',
       // Aggiungiamo i metadati che il resto dell'app potrebbe aspettarsi
       user_metadata: { name: 'Utente Demo' }
     });
@@ -99,7 +99,7 @@
   <div class="text-center mt-6">
     <p class="text-sm text-gray-600 dark:text-gray-400">
       Non hai un account?
-      <button on:click={goToRegister} class="font-medium text-green-600 hover:text-green-500">
+      <button  type="button" on:click={goToRegister} class="font-medium text-green-600 hover:text-green-500">
         Registrati
       </button>
     </p>
