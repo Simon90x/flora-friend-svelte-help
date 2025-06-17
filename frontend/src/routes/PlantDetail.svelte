@@ -1,5 +1,5 @@
 <script>
-  import { page, selectedPlant } from '../lib/stores.js';
+  import { page, selectedPlant } from '../lib/stores/index.js';
 
   // Importa il sistema a schede
   import TabGroup from '../lib/components/ui/TabGroup.svelte';

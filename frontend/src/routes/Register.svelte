@@ -1,6 +1,6 @@
 <script>
-  import { supabase } from '../lib/supabaseClient.js';
-  import { page } from '../lib/stores.js';
+  import { supabase } from '../lib/services/supabaseClient.js';
+  import { page } from '../lib/stores/index.js';
 
   let name = '';
   let email = '';

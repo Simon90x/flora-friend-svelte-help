@@ -7,8 +7,8 @@
 -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { supabase } from '../../supabaseClient.js';
-  import { user } from '../../stores.js';
+  import { supabase } from '../../services/supabaseClient.js';
+  import { user } from '../../stores/index.js';
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
 

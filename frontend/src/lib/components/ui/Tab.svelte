@@ -1,40 +1,36 @@
-<!--
-  Contenitore che gestisce un gruppo di schede.
-  Utilizza l'API Context di Svelte per comunicare con i componenti Tab figli
-  senza dover passare props manualmente a cascata (prop drilling).
--->
 <script>
-  import { setContext } from 'svelte';
-  import { writable } from 'svelte/store';
+  import { getContext } from 'svelte';
 
-  // Lo store 'activeTab' conterrà il nome della scheda attualmente selezionata.
-  // È uno store 'writable' così i componenti figli possono reagire ai suoi cambiamenti.
-  const activeTab = writable('');
+  export let name;
 
-  // Usiamo 'setContext' per rendere lo store 'activeTab' disponibile a tutti
-  // i componenti discendenti che lo richiederanno tramite 'getContext'.
-  setContext('tab-group', { activeTab });
+  // Richiediamo lo store 'activeTab' che il nostro 'TabGroup' ha fornito.
+  const { activeTab } = getContext('tab-group');
+
+  // Quando la scheda viene cliccata, aggiorniamo il valore dello store condiviso.
+  function selectTab() {
+    activeTab.set(name);
+  }
+
+  // Imposta questa scheda come attiva all'inizio se è la prima ad essere renderizzata
+  // e nessun'altra ha già impostato un valore.
+  if ($activeTab === '') {
+    $activeTab = name;
+  }
 </script>
 
-<div>
-  <!-- Bordo inferiore per la barra delle schede -->
-  <div class="border-b border-gray-200 dark:border-gray-700">
-    <!-- 
-      Slot per i pulsanti delle schede.
-      Qui inseriremo i nostri componenti <Tab>.
-    -->
-    <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-      <slot name="tabs"></slot>
-    </nav>
-  </div>
-
-  <!--
-    Slot per il contenuto.
-    Qui inseriremo il contenuto corrispondente a ciascuna scheda.
-    Il componente genitore (PlantDetailView) userà la logica {#if $activeTab === ...}
-    per mostrare il contenuto corretto.
-  -->
-  <div class="py-6">
-    <slot name="content"></slot>
-  </div>
-</div>
+<button
+  type="button"
+  on:click={selectTab}
+  class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded-t-md"
+  class:border-green-500={$activeTab === name}
+  class:text-green-600={$activeTab === name}
+  class:dark:text-green-400={$activeTab === name}
+  class:border-transparent={!($activeTab === name)}
+  class:text-gray-500={!($activeTab === name)}
+  class:hover:text-gray-700={!($activeTab === name)}
+  class:hover:border-gray-300={!($activeTab === name)}
+  class:dark:text-gray-400={!($activeTab === name)}
+  class:dark:hover:text-gray-300={!($activeTab === name)}
+>
+  <slot></slot>
+</button>

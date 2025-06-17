@@ -1,6 +1,6 @@
 <script>
-  import { page, user, isSidebarOpen } from '../../stores.js';
-  import { supabase } from '../../supabaseClient.js';
+  import { page, user, isSidebarOpen } from '../../stores/index.js';
+  import { supabase } from '../../services/supabaseClient.js';
 
   let currentUser;
   user.subscribe(u => currentUser = u);

@@ -1,1 +1,1 @@
-<p>Contenuto della scheda Log di Crescita.</p>
+<p>Contenuto della scheda Diario Fotografico.</p>

@@ -1,14 +1,14 @@
 <script>
   import { onMount } from 'svelte';
-  import { user, page, isSidebarOpen } from './lib/stores.js';
-  import { supabase } from './lib/supabaseClient.js';
+  import { user, page, isSidebarOpen } from './lib/stores/index.js';
+  import { supabase } from './lib/services/supabaseClient.js';
 
   // Importa le viste
   import Login from './routes/Login.svelte';
   import Register from './routes/Register.svelte';
   import Dashboard from './routes/Dashboard.svelte';
   import PlantDetail from './routes/PlantDetail.svelte';
-  import UserProfile from './routes/UserProfile.svelte';
+  //import UserProfile from './routes/UserProfile.svelte';
 
   // Importa il layout
   import Sidebar from './lib/components/layout/Sidebar.svelte';
@@ -88,7 +88,7 @@
           {:else if $page === 'plantDetail'}
             <PlantDetail />
           {:else if $page === 'profile'}
-            <UserProfile />
+            <Login />
           {/if}
         </div>
       </div>

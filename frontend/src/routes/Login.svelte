@@ -1,6 +1,6 @@
 <script>
-  import { supabase } from '../lib/supabaseClient.js';
-  import { page, user } from '../lib/stores.js'; // Importa anche lo store 'user'
+  import { supabase } from '../lib/services/supabaseClient.js';
+  import { page, user } from '../lib/stores/index.js'; // Importa anche lo store 'user'
   
   let email = '';
   let password = '';

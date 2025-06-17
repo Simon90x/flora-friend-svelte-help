@@ -1,9 +1,9 @@
 <script>
   import { onMount } from 'svelte';
-  import { supabase } from '../lib/supabaseClient.js';
-  import { user, page, selectedPlant } from '../lib/stores.js'; // Importa anche selectedPlant
+  import { supabase } from '../lib/services/supabaseClient.js';
+  import { user, page, selectedPlant } from '../lib/stores/index.js'; // Importa anche selectedPlant
 
-  import PlantCard from '../lib/components/PlantCard.svelte';
+  import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
   import EmptyState from '../lib/components/ui/EmptyState.svelte';
   import Button from '../lib/components/ui/Button.svelte';
@@ -57,10 +57,6 @@
     }
   }
 
-  function handleAddPlant() {
-    alert('Funzionalità "Aggiungi Pianta" da implementare! (Es. aprire una modale)');
-  }
-
   // Funzione per navigare al dettaglio della pianta
   function handleNavigateToDetail(event) {
     const plant = event.detail.plant;
@@ -94,7 +90,7 @@
 <Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
   <AddPlantForm
     on:close={() => isModalOpen = false}
-    onSuccess={handleAddPlantSuccess}
+    onSuccess={fetchPlants}
   />
 </Modal>
   {#if isLoading}
@@ -110,7 +106,7 @@
       title="Nessuna pianta trovata"
       message="Inizia aggiungendo la tua prima pianta per monitorarla."
       actionText="Aggiungi la tua prima pianta"
-      on:actionClick={handleAddPlant}
+      on:actionClick={() => isModalOpen = true}
     >
       <LeafIcon slot="icon" class="w-24 h-24" />
     </EmptyState>
