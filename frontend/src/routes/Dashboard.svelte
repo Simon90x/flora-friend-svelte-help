@@ -1,7 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import { supabase } from '../lib/services/supabaseClient.js';
-  import { user, page, selectedPlant } from '../lib/stores/index.js'; // Importa anche selectedPlant
+  import { user } from '../lib/stores/index.js';
+  import { link } from 'svelte-spa-router'; // Usiamo 'link' per la navigazione programmatica
 
   import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
@@ -9,43 +10,29 @@
   import Button from '../lib/components/ui/Button.svelte';
   import PlusIcon from '../lib/components/ui/icons/PlusIcon.svelte';
   import LeafIcon from '../lib/components/ui/icons/LeafIcon.svelte';
-
-  // Importa i nuovi componenti per la modale e il form
   import Modal from '../lib/components/modals/Modal.svelte';
   import AddPlantForm from '../lib/components/forms/AddPlantForm.svelte';
 
   let plants = [];
   let isLoading = true;
   let error = '';
-  
-  // Stato per la modale
   let isModalOpen = false;
 
-  onMount(() => {
-    // Se l'utente è in modalità demo, carica dati fittizi
-    if ($user.id === 'demo-user') {
-      loadDemoPlants();
-    } else {
-      fetchPlants();
-    }
-  });
-
-  function loadDemoPlants() {
-    isLoading = false;
-    plants = [
-      { id: 'demo1', name: 'Monstera Deliciosa', species: 'Araceae', cover_image_url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400', notes: 'Pianta demo molto bella.' },
-      { id: 'demo2', name: 'Sansevieria', species: 'Trifasciata', cover_image_url: 'https://images.unsplash.com/photo-1592152737979-994629e4874b?w=400', notes: 'Pianta demo resistente.' },
-    ];
-  }
+  onMount(fetchPlants);
 
   async function fetchPlants() {
     isLoading = true;
     error = '';
+    // La modalità Demo ora viene gestita a livello di API mockata o con policy RLS specifiche
+    if ($user.id === 'demo-user') {
+      loadDemoPlants();
+      return;
+    }
+    
     try {
       const { data, error: fetchError } = await supabase
         .from('plants')
         .select('*')
-        .eq('user_id', $user.id)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -57,42 +44,32 @@
     }
   }
 
-  // Funzione per navigare al dettaglio della pianta
-  function handleNavigateToDetail(event) {
-    const plant = event.detail.plant;
-    selectedPlant.set(plant); // Salva la pianta selezionata nello store
-    $page = 'plantDetail';      // Cambia pagina
+  function loadDemoPlants() {
+      isLoading = false;
+      plants = [
+        { id: 'demo1', name: 'Monstera Deliciosa', species: 'Araceae', cover_image_url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400', notes: 'Pianta demo molto bella.' },
+        { id: 'demo2', name: 'Sansevieria', species: 'Trifasciata', cover_image_url: 'https://images.unsplash.com/photo-1592157379799-994629e4874b?w=400', notes: 'Pianta demo resistente.' },
+      ];
   }
 
-  async function handleLogout() {
-    // Se è un utente demo, basta resettare lo store
-    if ($user.id === 'demo-user') {
-        user.set(null);
-        $page = 'login';
-    } else {
-        await supabase.auth.signOut();
-        // onAuthStateChange si occuperà del resto
-    }
-  }
 </script>
 
 <div class="max-w-7xl mx-auto">
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">Le Tue Piante</h1>
-    <div class="flex items-center space-x-4">
-      <Button on:click={() => isModalOpen = true} variant="primary">        <span slot="leftIcon"><PlusIcon /></span>
-        Aggiungi Pianta
-      </Button>
-      <Button on:click={handleLogout} variant="secondary">Logout</Button>
-    </div>
+    <Button on:click={() => isModalOpen = true} variant="primary">
+      <span slot="leftIcon"><PlusIcon /></span>
+      Aggiungi Pianta
+    </Button>
   </div>
 
-<Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
-  <AddPlantForm
-    on:close={() => isModalOpen = false}
-    onSuccess={fetchPlants}
-  />
-</Modal>
+  <Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
+    <AddPlantForm
+      on:close={() => isModalOpen = false}
+      onSuccess={fetchPlants}
+    />
+  </Modal>
+
   {#if isLoading}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each Array(4) as _}
@@ -113,7 +90,9 @@
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each plants as plant (plant.id)}
-        <PlantCard {plant} on:navigateToDetail={handleNavigateToDetail} />
+        <a href="/plant/{plant.id}" use:link>
+          <PlantCard {plant} />
+        </a>
       {/each}
     </div>
   {/if}
