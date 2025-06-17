@@ -1,25 +1,20 @@
-// vite.config.js
-
 import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte'; // Importa il plugin corretto
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import path from 'path'; // Assicurati che questo import sia presente
 
-// 1. Importa i plugin di PostCSS qui
 import tailwindcss from '@tailwindcss/postcss';
 import autoprefixer from 'autoprefixer';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    svelte() // <-- DEVE ESSERE CHIAMATO COME FUNZIONE: svelte()
-  ],
-  
-  // 2. Aggiungi questo blocco di configurazione per il CSS
+  plugins: [svelte()],
   css: {
     postcss: {
-      plugins: [
-        tailwindcss,
-        autoprefixer,
-      ],
+      plugins: [tailwindcss, autoprefixer],
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'), // Questa è la riga chiave
     },
   },
 });

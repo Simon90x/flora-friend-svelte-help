@@ -5,11 +5,11 @@
   import { user, page } from '../lib/stores.js';
 
   // Importa i componenti che ti ho fornito
-  import PlantCard from '../components/PlantCard.svelte';
-  import PlantCardSkeleton from '../components/skeletons/PlantCardSkeleton.svelte';
-  import EmptyState from '../components/ui/EmptyState.svelte';
-  import Button from '../components/ui/Button.svelte';
-  import { PlusIcon, LeafIcon } from '../components/ui/IconComponents.svelte';
+  import PlantCard from '@/components/PlantCard.svelte';
+  import PlantCardSkeleton from '@/components/skeletons/PlantCardSkeleton.svelte';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Button from '@/components/ui/Button.svelte';
+  import { PlusIcon, LeafIcon } from '@/components/ui/IconComponents.svelte';
 
   let plants = [];
   let isLoading = true;
@@ -32,7 +32,7 @@
       if (fetchError) throw fetchError;
       plants = data || [];
     } catch (e) {
-      error = "Impossibile caricare le piante: " + e.message;
+      error = 'Impossibile caricare le piante: ' + e.message;
     } finally {
       isLoading = false;
     }
@@ -48,7 +48,7 @@
     // selectedPlant.set(...)
     // page.set('plantDetail')
   }
-  
+
   async function handleLogout() {
     await supabase.auth.signOut();
   }
@@ -56,17 +56,13 @@
 
 <div class="p-4 md:p-8">
   <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl md:text-4xl font-bold text-green-600">
-      Le Tue Piante
-    </h1>
+    <h1 class="text-3xl md:text-4xl font-bold text-green-600">Le Tue Piante</h1>
     <div>
       <Button on:click={handleAddPlant} variant="primary" size="md" className="mr-4">
         <PlusIcon slot="leftIcon" />
         Aggiungi Pianta
       </Button>
-      <Button on:click={handleLogout} variant="secondary" size="md">
-        Logout
-      </Button>
+      <Button on:click={handleLogout} variant="secondary" size="md">Logout</Button>
     </div>
   </div>
 
@@ -88,11 +84,7 @@
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each plants as plant, index (plant.id)}
-        <PlantCard 
-          {plant} 
-          {index}
-          on:navigateToDetail={handleNavigateToDetail}
-        />
+        <PlantCard {plant} {index} on:navigateToDetail={handleNavigateToDetail} />
       {/each}
     </div>
   {/if}
