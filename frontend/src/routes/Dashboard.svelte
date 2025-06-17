@@ -9,8 +9,8 @@
   import PlantCardSkeleton from '../components/skeletons/PlantCardSkeleton.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
   import Button from '../components/ui/Button.svelte';
-  import PlusIcon from '../components/ui/IconComponents.svelte';
-  import LeafIcon from '../components/ui/IconComponents.svelte';
+  import PlusIcon from '../components/ui/icons/PlusIcon.svelte';
+  import LeafIcon from '../components/ui/icons/LeafIcon.svelte';
 
   let plants = [];
   let isLoading = true;
@@ -59,10 +59,12 @@
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-green-600">Le Tue Piante</h1>
     <div>
-      <Button on:click={handleAddPlant} variant="primary" size="md" className="mr-4">
-        <PlusIcon slot="leftIcon" />
-        Aggiungi Pianta
-      </Button>
+<Button on:click={handleAddPlant} variant="primary" size="md" className="mr-4">
+  <svelte:fragment slot="leftIcon">
+    <PlusIcon />
+  </svelte:fragment>
+  Aggiungi Pianta
+</Button>
       <Button on:click={handleLogout} variant="secondary" size="md">Logout</Button>
     </div>
   </div>
