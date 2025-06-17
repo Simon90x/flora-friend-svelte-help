@@ -1,79 +1,41 @@
 <script>
   import { onMount } from 'svelte';
-  import { user } from './lib/stores.js';
-  import { page, selectedPlant } from './lib/navigation.js';
+  import { user, page } from './lib/stores.js'; // Usiamo uno store unificato
   import { supabase } from './lib/supabaseClient.js';
-  
-  // Importa le "pagine"
+
+  // Importa i componenti che fungono da pagine
   import Login from './routes/Login.svelte';
   import Dashboard from './routes/Dashboard.svelte';
-  import PlantDetail from './routes/PlantDetail.svelte'; // Assumendo che tu abbia questo file
   import Register from './routes/Register.svelte';
+  // Aggiungi qui altre pagine come PlantDetail, Profile, etc.
 
-  let currentUser = null;
-  let plants = [];
-  let isLoading = true;
-  let error = '';
+  // Controlla lo stato di autenticazione all'avvio dell'app
+  onMount(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUser = session?.user ?? null;
+      user.set(currentUser); // Aggiorna lo store globale
+      
+      if (currentUser) {
+        $page = 'dashboard'; // Se l'utente è loggato, vai alla dashboard
+      } else {
+        $page = 'login'; // Altrimenti, vai al login
+      }
+    });
 
-  // Sottoscrivi allo store 'user' per reagire ai cambiamenti di login/logout
-  user.subscribe(value => {
-    currentUser = value;
-    if (currentUser) {
-      $page = 'dashboard'; // Se l'utente è loggato, vai alla dashboard
-      fetchPlants();
-    } else {
-      $page = 'login'; // Altrimenti, vai al login
-    }
+    // Pulisci il listener quando il componente viene distrutto
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   });
-
-  // Funzione per caricare le piante dell'utente
-  async function fetchPlants() {
-    if (!currentUser) return;
-    isLoading = true;
-    error = '';
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('plants')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      plants = data || [];
-    } catch (e) {
-      error = "Impossibile caricare le piante: " + e.message;
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // Gestori di eventi per la navigazione
-  function handleNavigateToDetail(event) {
-    const plantId = event.detail;
-    const plant = plants.find(p => p.id === plantId);
-    if (plant) {
-      $selectedPlant = plant;
-      $page = 'plantDetail';
-    }
-  }
-
-  function handleAddPlant() {
-    // Qui dovresti aprire un modale o una nuova pagina per aggiungere una pianta
-    console.log('Azione: Aggiungi nuova pianta');
-    alert('Funzionalità "Aggiungi Pianta" da implementare!');
-  }
-
-  // Gestisce il logout
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    user.set(null); // Questo triggererà la sottoscrizione e manderà alla pagina di login
-    plants = [];
-    $page = 'login';
-  }
 </script>
 
-<main class="bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-200">
-  {#if !currentUser}
+<main class="bg-gray-50 dark:bg-gray-900 min-h-screen font-sans">
+  {#if $user === undefined}
+    <!-- Stato iniziale di caricamento mentre si controlla l'utente -->
+    <div class="flex items-center justify-center h-screen">
+      <p>Caricamento...</p>
+    </div>
+  {:else if !$user}
     <!-- Se l'utente non è loggato, mostra solo Login o Register -->
     {#if $page === 'login'}
       <Login />
@@ -81,24 +43,17 @@
       <Register />
     {/if}
   {:else}
-    <!-- Layout per utente loggato (es. con Sidebar) -->
-    <div class="flex">
-      <!-- <Sidebar on:logout={handleLogout} /> -->
-      
-      <div class="flex-1">
-        {#if $page === 'dashboard'}
-          <Dashboard 
-            {plants} 
-            {isLoading}
-            on:addPlant={handleAddPlant}
-            on:navigateToDetail={handleNavigateToDetail}
-          />
-        {:else if $page === 'plantDetail'}
-          <PlantDetail />
-        {:else if $page === 'profile'}
-          <!-- <UserProfile /> -->
-        {/if}
-      </div>
+    <!-- Layout per utente loggato -->
+    <div class="flex-1">
+      {#if $page === 'dashboard'}
+        <Dashboard />
+      {:else if $page === 'profile'}
+        <!-- <UserProfile /> -->
+        <p>Pagina Profilo (da implementare)</p>
+      {:else if $page === 'plantDetail'}
+        <!-- <PlantDetail /> -->
+        <p>Pagina Dettaglio Pianta (da implementare)</p>
+      {/if}
     </div>
   {/if}
 </main>
