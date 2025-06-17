@@ -1,0 +1,1 @@
+<p>Contenuto della scheda Log di Crescita.</p>

@@ -1,0 +1,1 @@
+<p>Contenuto della scheda Consigli AI.</p>

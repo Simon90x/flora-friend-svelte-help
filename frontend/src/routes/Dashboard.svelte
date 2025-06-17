@@ -3,16 +3,23 @@
   import { supabase } from '../lib/supabaseClient.js';
   import { user, page, selectedPlant } from '../lib/stores.js'; // Importa anche selectedPlant
 
-  import PlantCard from '../components/PlantCard.svelte';
-  import PlantCardSkeleton from '../components/skeletons/PlantCardSkeleton.svelte';
-  import EmptyState from '../components/ui/EmptyState.svelte';
-  import Button from '../components/ui/Button.svelte';
-  import PlusIcon from '../components/ui/icons/PlusIcon.svelte';
-  import LeafIcon from '../components/ui/icons/LeafIcon.svelte';
+  import PlantCard from '../lib/components/PlantCard.svelte';
+  import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
+  import EmptyState from '../lib/components/ui/EmptyState.svelte';
+  import Button from '../lib/components/ui/Button.svelte';
+  import PlusIcon from '../lib/components/ui/icons/PlusIcon.svelte';
+  import LeafIcon from '../lib/components/ui/icons/LeafIcon.svelte';
+
+  // Importa i nuovi componenti per la modale e il form
+  import Modal from '../lib/components/modals/Modal.svelte';
+  import AddPlantForm from '../lib/components/forms/AddPlantForm.svelte';
 
   let plants = [];
   let isLoading = true;
   let error = '';
+  
+  // Stato per la modale
+  let isModalOpen = false;
 
   onMount(() => {
     // Se l'utente è in modalità demo, carica dati fittizi
@@ -77,14 +84,19 @@
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">Le Tue Piante</h1>
     <div class="flex items-center space-x-4">
-      <Button on:click={handleAddPlant} variant="primary">
-        <span slot="leftIcon"><PlusIcon /></span>
+      <Button on:click={() => isModalOpen = true} variant="primary">        <span slot="leftIcon"><PlusIcon /></span>
         Aggiungi Pianta
       </Button>
       <Button on:click={handleLogout} variant="secondary">Logout</Button>
     </div>
   </div>
 
+<Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
+  <AddPlantForm
+    on:close={() => isModalOpen = false}
+    onSuccess={handleAddPlantSuccess}
+  />
+</Modal>
   {#if isLoading}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each Array(4) as _}
