@@ -1,7 +1,7 @@
 <!-- src/routes/Login.svelte -->
 <script>
-import { supabase } from '@/lib/supabaseClient.js';
-import { page } from '@/lib/stores.js';
+import { supabase } from '../lib/supabaseClient.js';
+import { page } from '../lib/stores.js';
   let email = '';
   let password = '';
   let error = '';

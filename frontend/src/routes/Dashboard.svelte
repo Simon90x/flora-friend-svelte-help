@@ -5,11 +5,12 @@
   import { user, page } from '../lib/stores.js';
 
   // Importa i componenti che ti ho fornito
-  import PlantCard from '@/components/PlantCard.svelte';
-  import PlantCardSkeleton from '@/components/skeletons/PlantCardSkeleton.svelte';
-  import EmptyState from '@/components/ui/EmptyState.svelte';
-  import Button from '@/components/ui/Button.svelte';
-  import { PlusIcon, LeafIcon } from '@/components/ui/IconComponents.svelte';
+  import PlantCard from '../components/PlantCard.svelte';
+  import PlantCardSkeleton from '../components/skeletons/PlantCardSkeleton.svelte';
+  import EmptyState from '../components/ui/EmptyState.svelte';
+  import Button from '../components/ui/Button.svelte';
+  import PlusIcon from '../components/ui/IconComponents.svelte';
+  import LeafIcon from '../components/ui/IconComponents.svelte';
 
   let plants = [];
   let isLoading = true;
@@ -79,12 +80,12 @@
       actionText="Aggiungi la tua prima pianta"
       on:actionClick={handleAddPlant}
     >
-      <LeafIcon slot="icon" className="w-24 h-24" />
+      <LeafIcon slot="icon" class="w-24 h-24" />
     </EmptyState>
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {#each plants as plant, index (plant.id)}
-        <PlantCard {plant} {index} on:navigateToDetail={handleNavigateToDetail} />
+        <PlantCard {plant} index={index} on:navigateToDetail={handleNavigateToDetail} />
       {/each}
     </div>
   {/if}

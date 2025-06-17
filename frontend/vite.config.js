@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import path from 'path'; // Assicurati che questo import sia presente
 
 import tailwindcss from '@tailwindcss/postcss';
 import autoprefixer from 'autoprefixer';
@@ -10,11 +9,6 @@ export default defineConfig({
   css: {
     postcss: {
       plugins: [tailwindcss, autoprefixer],
-    },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'), // Questa è la riga chiave
     },
   },
 });

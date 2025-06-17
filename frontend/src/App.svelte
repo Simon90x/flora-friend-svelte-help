@@ -1,10 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-import { user, page } from '@/lib/stores.js';
-import Login from '@/routes/Login.svelte';
-import Dashboard from '@/routes/Dashboard.svelte';
-import Register from '@/routes/Register.svelte';
-import { supabase } from '@/lib/supabaseClient.js';
+import { user, page } from './lib/stores.js';
+import Login from './routes/Login.svelte';
+import Dashboard from './routes/Dashboard.svelte';
+import Register from './routes/Register.svelte';
+import { supabase } from './lib/supabaseClient.js';
   // Aggiungi qui altre pagine come PlantDetail, Profile, etc.
 
   // Controlla lo stato di autenticazione all'avvio dell'app

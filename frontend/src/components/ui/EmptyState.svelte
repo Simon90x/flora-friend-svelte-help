@@ -1,7 +1,7 @@
 <!-- src/components/ui/EmptyState.svelte -->
 <script>
   import { createEventDispatcher } from 'svelte';
-  import Button from '@/components/ui/Button.svelte'; // Usiamo l'alias!
+  import Button from './Button.svelte'; // Usiamo l'alias!
 
   export let title = '';
   export let message = '';
