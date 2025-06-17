@@ -1,10 +1,8 @@
-<!-- src/routes/Dashboard.svelte -->
 <script>
   import { onMount } from 'svelte';
   import { supabase } from '../lib/supabaseClient.js';
-  import { user, page } from '../lib/stores.js';
+  import { user, page, selectedPlant } from '../lib/stores.js'; // Importa anche selectedPlant
 
-  // Importa i componenti che ti ho fornito
   import PlantCard from '../components/PlantCard.svelte';
   import PlantCardSkeleton from '../components/skeletons/PlantCardSkeleton.svelte';
   import EmptyState from '../components/ui/EmptyState.svelte';
@@ -17,8 +15,21 @@
   let error = '';
 
   onMount(() => {
-    fetchPlants();
+    // Se l'utente è in modalità demo, carica dati fittizi
+    if ($user.id === 'demo-user') {
+      loadDemoPlants();
+    } else {
+      fetchPlants();
+    }
   });
+
+  function loadDemoPlants() {
+    isLoading = false;
+    plants = [
+      { id: 'demo1', name: 'Monstera Deliciosa', species: 'Araceae', cover_image_url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=400', notes: 'Pianta demo molto bella.' },
+      { id: 'demo2', name: 'Sansevieria', species: 'Trifasciata', cover_image_url: 'https://images.unsplash.com/photo-1592152737979-994629e4874b?w=400', notes: 'Pianta demo resistente.' },
+    ];
+  }
 
   async function fetchPlants() {
     isLoading = true;
@@ -27,7 +38,7 @@
       const { data, error: fetchError } = await supabase
         .from('plants')
         .select('*')
-        .eq('user_id', $user.id) // Usa l'ID dell'utente dallo store
+        .eq('user_id', $user.id)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -40,32 +51,37 @@
   }
 
   function handleAddPlant() {
-    alert('Funzionalità "Aggiungi Pianta" da implementare!');
+    alert('Funzionalità "Aggiungi Pianta" da implementare! (Es. aprire una modale)');
   }
 
+  // Funzione per navigare al dettaglio della pianta
   function handleNavigateToDetail(event) {
-    // Logica per andare alla pagina di dettaglio
-    console.log('Naviga al dettaglio della pianta:', event.detail);
-    // selectedPlant.set(...)
-    // page.set('plantDetail')
+    const plant = event.detail.plant;
+    selectedPlant.set(plant); // Salva la pianta selezionata nello store
+    $page = 'plantDetail';      // Cambia pagina
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    // Se è un utente demo, basta resettare lo store
+    if ($user.id === 'demo-user') {
+        user.set(null);
+        $page = 'login';
+    } else {
+        await supabase.auth.signOut();
+        // onAuthStateChange si occuperà del resto
+    }
   }
 </script>
 
-<div class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto">
   <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl md:text-4xl font-bold text-green-600">Le Tue Piante</h1>
-    <div>
-<Button on:click={handleAddPlant} variant="primary" size="md" className="mr-4">
-  <svelte:fragment slot="leftIcon">
-    <PlusIcon />
-  </svelte:fragment>
-  Aggiungi Pianta
-</Button>
-      <Button on:click={handleLogout} variant="secondary" size="md">Logout</Button>
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">Le Tue Piante</h1>
+    <div class="flex items-center space-x-4">
+      <Button on:click={handleAddPlant} variant="primary">
+        <span slot="leftIcon"><PlusIcon /></span>
+        Aggiungi Pianta
+      </Button>
+      <Button on:click={handleLogout} variant="secondary">Logout</Button>
     </div>
   </div>
 
@@ -75,6 +91,8 @@
         <PlantCardSkeleton />
       {/each}
     </div>
+  {:else if error}
+    <div class="text-center p-8 bg-red-100 text-red-700 rounded-lg">{error}</div>
   {:else if plants.length === 0}
     <EmptyState
       title="Nessuna pianta trovata"
@@ -86,8 +104,8 @@
     </EmptyState>
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {#each plants as plant, index (plant.id)}
-        <PlantCard {plant} index={index} on:navigateToDetail={handleNavigateToDetail} />
+      {#each plants as plant (plant.id)}
+        <PlantCard {plant} on:navigateToDetail={handleNavigateToDetail} />
       {/each}
     </div>
   {/if}
