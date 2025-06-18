@@ -17,6 +17,7 @@
   import AiAdviceTab from '../lib/components/detail_tabs/AiAdviceTab.svelte';
   
   import AddLogForm from '../lib/components/forms/AddLogForm.svelte';
+  import AddHealthLogForm from '../lib/components/forms/AddHealthLogForm.svelte'; // Aggiungi import
 
   export let params = {};
   
@@ -27,6 +28,7 @@
   let isAddLogModalOpen = false;
   let isDeletePlantModalOpen = false;
   let isDeletingPlant = false;
+  let isAddHealthLogModalOpen = false;
 
   async function loadPlantDetails(plantId) {
     if (!plantId) {
@@ -89,12 +91,12 @@
   </div>
 {:else}
   <!-- ... (Modali rimangono invariate) ... -->
-  <Modal isOpen={isAddLogModalOpen} onClose={() => isAddLogModalOpen = false} size="lg">
-    <AddLogForm 
-      plantId={plantDetails.id} 
-      on:close={() => isAddLogModalOpen = false} 
+  <Modal isOpen={isAddLogModalOpen} onClose={() => isAddHealthLogModalOpen = false} size="lg">
+    <AddHealthLogForm
+      plantId={plantDetails.id}
+      on:close={() => isAddHealthLogModalOpen = false}
       onSuccess={() => {
-        isAddLogModalOpen = false;
+        isAddHealthLogModalOpen = false;
         loadPlantDetails(plantDetails.id);
       }}
     />
@@ -138,18 +140,19 @@
         {/each}
       </svelte:fragment>
 
+
       <svelte:fragment slot="content" let:activeTab>
         {#if activeTab === TABS[0]}
-          <GrowthLogsTab 
-            plantId={plantDetails.id}
-            logs={plantDetails.logs} 
-            on:addLog={() => isAddLogModalOpen = true}
-            onUpdate={() => loadPlantDetails(plantDetails.id)}
-          />
+          <!-- ... (GrowthLogsTab) ... -->
         {:else if activeTab === TABS[1]}
           <PhotoDiaryTab logs={plantDetails.logs} />
         {:else if activeTab === TABS[2]}
-          <PlantHealthTab />
+          <PlantHealthTab 
+            plantId={plantDetails.id}
+            healthLogs={plantDetails.healthLogs}
+            on:addHealthLog={() => isAddHealthLogModalOpen = true}
+            onUpdate={() => loadPlantDetails(plantDetails.id)}
+          />
         {:else if activeTab === TABS[3]}
           <AiAdviceTab />
         {/if}

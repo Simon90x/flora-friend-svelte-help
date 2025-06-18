@@ -1,0 +1,37 @@
+# File di log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Directory delle dipendenze
+# La regola più importante per te!
+node_modules/
+
+# File di ambiente
+# Questi contengono chiavi segrete e non devono essere condivisi!
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Build output
+# La cartella dove Vite mette il risultato della compilazione
+dist/
+build/
+.svelte-kit/
+.vercel/
+.netlify/
+
+# File di cache e temporanei
+.npm/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# File specifici del sistema operativo
+.DS_Store
+Thumbs.db

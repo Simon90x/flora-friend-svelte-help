@@ -55,6 +55,7 @@ const demoDataStore = writable(JSON.parse(JSON.stringify(initialData)));
 
 // Funzioni che simulano le chiamate API
 export const mockApi = {
+  
   getPlants: () => new Promise(resolve => {
     demoDataStore.subscribe(data => resolve(data.plants))();
   }),
@@ -131,5 +132,47 @@ export const mockApi = {
   deleteUser: () => new Promise(resolve => {
     user.set(null);
     resolve({ success: true });
+  }),
+   addHealthLog: (plantId, logData) => new Promise(resolve => {
+    const newLog = { ...logData, id: `health-${Date.now()}`, plant_id: plantId };
+    demoDataStore.update(data => {
+      if (!data.healthLogs[plantId]) data.healthLogs[plantId] = [];
+      data.healthLogs[plantId] = [newLog, ...data.healthLogs[plantId]].sort((a,b) => new Date(b.date) - new Date(a.date));
+      return data;
+    });
+    resolve(newLog);
+  }),
+
+  deleteHealthLog: (plantId, logId) => new Promise(resolve => {
+    demoDataStore.update(data => {
+        if(data.healthLogs[plantId]) {
+            data.healthLogs[plantId] = data.healthLogs[plantId].filter(log => log.id !== logId);
+        }
+        return data;
+    });
+    resolve({ success: true });
+  }),
+  
+  suggestSpecies: (imageBase64) => new Promise(resolve => {
+    // Simula una latenza di rete
+    setTimeout(() => {
+        // In una vera app, qui ci sarebbe la chiamata a Google GenAI, etc.
+        // Per ora, restituiamo un risultato fisso se l'immagine non è vuota.
+        if (imageBase64) {
+            resolve({
+                species: 'Monstera deliciosa',
+                confidence: 0.92,
+                message: 'Abbastanza sicuri che sia una Monstera!'
+            });
+        } else {
+            resolve({
+                species: null,
+                confidence: 0,
+                message: 'Nessuna immagine fornita.'
+            });
+        }
+    }, 1500); // 1.5 secondi di attesa
   })
+
+
 };

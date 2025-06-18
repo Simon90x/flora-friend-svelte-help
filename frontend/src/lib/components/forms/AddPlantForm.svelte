@@ -1,10 +1,11 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { supabase } from '../../services/supabaseClient.js';
   import { user } from '../../stores/index.js';
   import { mockApi } from '../../services/mockData.js';
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
+  import { slide } from 'svelte/transition';
+
 
   export let onSuccess = () => {};
 
@@ -17,11 +18,33 @@
   let isLoading = false;
   let error = '';
 
+  // Stato per la funzione AI
+  let isSuggesting = false;
+  let suggestion = null;
+
   const dispatch = createEventDispatcher();
 
   function handleImage(event) {
     coverImageBase64 = event.detail.base64;
+    suggestion = null; // Resetta il suggerimento se l'immagine cambia
   }
+
+  async function handleSuggestSpecies() {
+    if (!coverImageBase64) return;
+    isSuggesting = true;
+    suggestion = null;
+    const result = await mockApi.suggestSpecies(coverImageBase64);
+    suggestion = result;
+    isSuggesting = false;
+  }
+
+  function applySuggestion() {
+    if (suggestion && suggestion.species) {
+        plantSpecies = suggestion.species;
+        suggestion = null; // Nascondi il suggerimento dopo l'applicazione
+    }
+  }
+
 
   async function handleSubmit() {
     if (!plantName.trim()) {
@@ -86,8 +109,35 @@
   <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Aggiungi una nuova pianta</h2>
   
   <form on:submit|preventDefault={handleSubmit} class="space-y-4">
-    <ImageInput label="Immagine di Copertina" on:imageChange={handleImage} />
+    <div class="relative">
+        <ImageInput label="Immagine di Copertina" on:imageChange={handleImage} />
+        
+        {#if suggestion && suggestion.species}
+            <div 
+                class="absolute bottom-2 left-2 right-2 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90"
+                on:click={applySuggestion}
+                role="button"
+                tabindex="0"
+                transition:slide
+            >
+                <p class="font-bold text-lg">{suggestion.species}</p>
+                <p class="text-sm opacity-80">Clicca per usare questo nome</p>
+            </div>
+        {/if}
+    </div>
+    
+    {#if coverImageBase64}
+        <Button 
+            type="button" 
+            variant="secondary" 
+            on:click={handleSuggestSpecies}
+            disabled={isSuggesting}
+        >
+            {isSuggesting ? 'Analisi in corso...' : 'Suggerisci Specie (AI)'}
+        </Button>
+    {/if}
 
+    <!-- ... (resto del form) ... -->
     <div>
       <label for="plant-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome Pianta</label>
       <input type="text" id="plant-name" bind:value={plantName} required class="mt-1 w-full input" placeholder="Es. Monstera del salotto">
