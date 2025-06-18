@@ -2,10 +2,10 @@
   import { createEventDispatcher } from 'svelte';
   import { user } from '../../stores/index.js';
   import { mockApi } from '../../services/mockData.js';
+  import { supabase } from '../../services/supabaseClient.js';
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
   import { slide } from 'svelte/transition';
-
 
   export let onSuccess = () => {};
 
@@ -33,9 +33,15 @@
     if (!coverImageBase64) return;
     isSuggesting = true;
     suggestion = null;
-    const result = await mockApi.suggestSpecies(coverImageBase64);
-    suggestion = result;
-    isSuggesting = false;
+    error = '';
+    try {
+        const result = await mockApi.suggestSpecies(coverImageBase64);
+        suggestion = result;
+    } catch (e) {
+        error = 'Servizio AI non disponibile al momento.';
+    } finally {
+        isSuggesting = false;
+    }
   }
 
   function applySuggestion() {
@@ -44,7 +50,6 @@
         suggestion = null; // Nascondi il suggerimento dopo l'applicazione
     }
   }
-
 
   async function handleSubmit() {
     if (!plantName.trim()) {
@@ -57,7 +62,6 @@
 
     try {
       if ($user.id === 'demo-user') {
-        // --- MOCK API CALL ---
         await mockApi.addPlant({
           name: plantName,
           species: plantSpecies,
@@ -66,7 +70,7 @@
           cover_image_url: coverImageBase64 || 'https://placehold.co/400x300/e2e8f0/4a5568?text=No+Image',
         });
       } else {
-        // --- REAL API CALL ---
+        // Logica reale per Supabase
         let imageUrl = null;
         if (coverImageBase64) {
           const fileName = `public/${$user.id}/${Date.now()}.jpg`;
@@ -92,10 +96,8 @@
         });
         if (insertError) throw insertError;
       }
-
       onSuccess();
       dispatch('close');
-
     } catch (e) {
       console.error('Errore nel salvataggio della pianta:', e);
       error = e.message || 'Si è verificato un errore imprevisto.';
@@ -104,7 +106,7 @@
     }
   }
 </script>
-<!-- ... (il resto del template rimane identico) ... -->
+
 <div class="p-6">
   <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Aggiungi una nuova pianta</h2>
   
@@ -114,11 +116,12 @@
         
         {#if suggestion && suggestion.species}
             <div 
-                class="absolute bottom-2 left-2 right-2 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90"
+                class="absolute bottom-2 left-2 right-2 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90 backdrop-blur-sm"
                 on:click={applySuggestion}
                 role="button"
                 tabindex="0"
-                transition:slide
+                on:keydown={(e) => {if(e.key === 'Enter') applySuggestion()}}
+                transition:slide={{duration: 200}}
             >
                 <p class="font-bold text-lg">{suggestion.species}</p>
                 <p class="text-sm opacity-80">Clicca per usare questo nome</p>
@@ -126,18 +129,19 @@
         {/if}
     </div>
     
-    {#if coverImageBase64}
-        <Button 
-            type="button" 
-            variant="secondary" 
-            on:click={handleSuggestSpecies}
-            disabled={isSuggesting}
-        >
-            {isSuggesting ? 'Analisi in corso...' : 'Suggerisci Specie (AI)'}
-        </Button>
+    {#if coverImageBase64 && !suggestion}
+        <div transition:fade={{duration:150}}>
+            <Button 
+                type="button" 
+                variant="secondary" 
+                on:click={handleSuggestSpecies}
+                disabled={isSuggesting}
+            >
+                {isSuggesting ? 'Analisi in corso...' : 'Suggerisci Specie (AI)'}
+            </Button>
+        </div>
     {/if}
 
-    <!-- ... (resto del form) ... -->
     <div>
       <label for="plant-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome Pianta</label>
       <input type="text" id="plant-name" bind:value={plantName} required class="mt-1 w-full input" placeholder="Es. Monstera del salotto">

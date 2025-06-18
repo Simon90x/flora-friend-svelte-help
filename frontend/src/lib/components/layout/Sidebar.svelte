@@ -50,7 +50,6 @@
     </ul>
   </nav>
 
-  <!-- Sezione Personalizzazione UI (Placeholder) -->
   <div class="mb-4">
     <h3 class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Personalizza</h3>
     <p class="px-4 text-sm text-gray-400">Opzioni tema in arrivo...</p>
@@ -58,7 +57,6 @@
 
   {#if $user}
   <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-    <!-- FIX: Avvolto l'intero blocco in un link cliccabile -->
     <a href="/profile" use:link on:click={onNavigate} class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0">
@@ -74,7 +72,6 @@
             </div>
         </div>
     </a>
-    
     <button on:click={handleLogout} class="mt-4 w-full text-left px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-900 dark:text-red-300">
       Logout
     </button>

@@ -1,96 +1,118 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
-  import { fade } from 'svelte/transition';
+  import EmptyState from '../ui/EmptyState.svelte';
+  import Button from '../ui/Button.svelte';
+  import PlusIcon from '../ui/icons/PlusIcon.svelte';
+  import ConfirmationModal from '../modals/ConfirmationModal.svelte';
+  import ImageViewerModal from '../modals/ImageViewerModal.svelte';
+  import { mockApi } from '../../services/mockData.js';
+  import { createEventDispatcher } from 'svelte';
+  
+  export let plantId;
+  export let logs = [];
+  export let onUpdate = () => {};
 
-  export let isOpen = false;
-  export let images = []; // Array di URL delle immagini
-  export let startIndex = 0; // Indice dell'immagine da cui partire
-  export let onClose = () => {};
+  const dispatch = createEventDispatcher();
 
-  let currentIndex = startIndex;
+  let logToDelete = null;
+  let isConfirmDeleteOpen = false;
+  let isLoadingDelete = false;
 
-  $: if (isOpen) {
-    currentIndex = startIndex;
+  // Stato per il visualizzatore immagini
+  let isViewerOpen = false;
+  let viewerStartIndex = 0;
+  $: photoUrls = logs.map(log => log.photo_url).filter(Boolean);
+
+  function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   }
 
-  function showPrev() {
-    currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+  function handleDeleteClick(log) {
+    logToDelete = log;
+    isConfirmDeleteOpen = true;
   }
 
-  function showNext() {
-    currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+  async function confirmDelete() {
+    if (!logToDelete) return;
+    isLoadingDelete = true;
+    await mockApi.deleteGrowthLog(plantId, logToDelete.id);
+    isLoadingDelete = false;
+    isConfirmDeleteOpen = false;
+    logToDelete = null;
+    onUpdate();
   }
-
-  function handleKeydown(e) {
-    if (e.key === 'Escape') onClose();
-    if (e.key === 'ArrowLeft') showPrev();
-    if (e.key === 'ArrowRight') showNext();
+  
+  function openImageViewer(index) {
+    viewerStartIndex = index;
+    isViewerOpen = true;
   }
-
-  onMount(() => {
-    window.addEventListener('keydown', handleKeydown);
-  });
-  onDestroy(() => {
-    window.removeEventListener('keydown', handleKeydown);
-  });
 </script>
 
-{#if isOpen && images.length > 0}
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-    role="dialog"
-    aria-modal="true"
-    on:click|self={onClose}
-    transition:fade={{ duration: 200 }}
-  >
-    <!-- Pulsante di chiusura -->
-    <button
-      on:click={onClose}
-      class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-10"
-      aria-label="Chiudi visualizzatore"
-    >
-      <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-    </button>
+<div>
+  <ImageViewerModal
+    isOpen={isViewerOpen}
+    images={photoUrls}
+    startIndex={viewerStartIndex}
+    onClose={() => isViewerOpen = false}
+  />
+  
+  <ConfirmationModal
+    isOpen={isConfirmDeleteOpen}
+    title="Elimina Log"
+    message="Sei sicuro di voler eliminare questo log di crescita? L'azione è irreversibile."
+    onConfirm={confirmDelete}
+    onCancel={() => isConfirmDeleteOpen = false}
+    isLoading={isLoadingDelete}
+  />
 
-    <!-- Pulsante Precedente -->
-    {#if images.length > 1}
-      <button
-        on:click={showPrev}
-        class="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-        aria-label="Immagine precedente"
-      >
-        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-      </button>
-    {/if}
-
-    <!-- Contenitore Immagine -->
-    <div class="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-        {#key currentIndex}
-        <img
-            src={images[currentIndex]}
-            alt="Immagine ingrandita {currentIndex + 1} di {images.length}"
-            class="max-w-full max-h-full object-contain shadow-2xl"
-            in:fade={{ duration: 150 }}
-        />
-        {/key}
-    </div>
-
-    <!-- Pulsante Successivo -->
-    {#if images.length > 1}
-      <button
-        on:click={showNext}
-        class="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-        aria-label="Immagine successiva"
-      >
-        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-      </button>
-    {/if}
-
-     <!-- Contatore -->
-    {#if images.length > 1}
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-            {currentIndex + 1} / {images.length}
-        </div>
-    {/if}
+  <div class="flex justify-between items-center mb-6">
+    <h3 class="text-xl font-semibold">Log di Crescita</h3>
+    <Button variant="secondary" size="sm" on:click={() => dispatch('addLog')}>
+        <PlusIcon slot="leftIcon" />
+        Aggiungi Log
+    </Button>
   </div>
-{/if}
+
+  {#if logs.length === 0}
+    <EmptyState
+      title="Nessun log di crescita"
+      message="Registra i progressi della tua pianta aggiungendo foto, note e misurazioni."
+      actionText="Aggiungi il primo log"
+      on:actionClick={() => dispatch('addLog')}
+    />
+  {:else}
+    <div class="space-y-8">
+      {#each logs as log, i (log.id)}
+        <div class="flex flex-col md:flex-row gap-6 p-4 rounded-lg bg-white dark:bg-gray-800/50 shadow-sm">
+          <button on:click={() => openImageViewer(i)} class="flex-shrink-0 appearance-none">
+            <img 
+              src={log.photo_url} 
+              alt="Log del {formatDate(log.date)}" 
+              class="w-full md:w-40 h-40 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity cursor-pointer"
+            >
+          </button>
+          
+          <div class="flex-1 text-left">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="font-bold text-lg">{formatDate(log.date)}</p>
+                    {#if log.height_cm}
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Altezza: {log.height_cm} cm</p>
+                    {/if}
+                </div>
+                <div class="flex space-x-2">
+                    <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-100" on:click={() => handleDeleteClick(log)}>
+                        Elimina
+                    </Button>
+                </div>
+            </div>
+            <p class="mt-2 text-gray-700 dark:text-gray-300">{log.notes || 'Nessuna nota per questo log.'}</p>
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+</div>
