@@ -1,8 +1,9 @@
 <script>
-  import { onMount, getContext } from 'svelte';
-  import { user, page, selectedPlant } from '../lib/stores/index.js';
+  import { onMount } from 'svelte';
+  import { user } from '../lib/stores/index.js';
   import { supabase } from '../lib/services/supabaseClient.js';
   import { mockApi } from '../lib/services/mockData.js';
+  import { push } from 'svelte-spa-router';
 
   import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
@@ -28,10 +29,8 @@
     try {
       let data;
       if ($user.id === 'demo-user') {
-        // Usa il servizio mock per la demo
         data = await mockApi.getPlants();
       } else {
-        // Logica originale per utenti reali
         const { data: realData, error: fetchError } = await supabase
           .from('plants')
           .select('*')
@@ -50,11 +49,8 @@
 
   function handleNavigateToDetail(event) {
     const plant = event.detail.plant;
-    selectedPlant.set(plant);
-    $page = 'plantDetail';
+    push(`/plant/${plant.id}`);
   }
-
-  // La funzione di logout è gestita solo dalla Sidebar
 </script>
 
 <div class="max-w-7xl mx-auto">
@@ -69,7 +65,10 @@
   <Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
     <AddPlantForm
       on:close={() => isModalOpen = false}
-      onSuccess={loadPlants}
+      onSuccess={() => {
+        isModalOpen = false;
+        loadPlants();
+      }}
     />
   </Modal>
 

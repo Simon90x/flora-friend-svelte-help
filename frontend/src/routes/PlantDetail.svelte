@@ -1,9 +1,9 @@
 <script>
   import { onMount } from 'svelte';
-  import { page, selectedPlant } from '../lib/stores/index.js';
-  import { user } from '../lib/stores/index.js';
+  import { user, selectedPlant } from '../lib/stores/index.js';
   import { supabase } from '../lib/services/supabaseClient.js';
   import { mockApi } from '../lib/services/mockData.js';
+  import { link } from 'svelte-spa-router';
 
   import TabGroup from '../lib/components/ui/TabGroup.svelte';
   import Tab from '../lib/components/ui/Tab.svelte';
@@ -12,29 +12,30 @@
   import PlantHealthTab from '../lib/components/detail_tabs/PlantHealthTab.svelte';
   import AiAdviceTab from '../lib/components/detail_tabs/AiAdviceTab.svelte';
 
+  // La rotta ora ci passa i parametri
+  export let params = {};
+  
   let plantDetails = null;
   let isLoading = true;
 
   onMount(() => {
-    loadPlantDetails();
+    loadPlantDetails(params.id);
   });
 
-  async function loadPlantDetails() {
-    if (!$selectedPlant?.id) return;
+  async function loadPlantDetails(plantId) {
+    if (!plantId) return;
     isLoading = true;
     
+    // Per coerenza, anche il dettaglio usa `selectedPlant` per ora, ma si basa sull'ID dall'URL
     if ($user.id === 'demo-user') {
-      // --- MOCK API CALL ---
-      plantDetails = await mockApi.getPlantDetails($selectedPlant.id);
+      plantDetails = await mockApi.getPlantDetails(plantId);
     } else {
-      // --- REAL API CALLS ---
-      // MOCK API BLUEPRINT: GET /rest/v1/plants?id=eq.{plantId}
-      // MOCK API BLUEPRINT: GET /rest/v1/growth_logs?plant_id=eq.{plantId}
-      const { data: plantData } = await supabase.from('plants').select('*').eq('id', $selectedPlant.id).single();
-      const { data: logsData } = await supabase.from('growth_logs').select('*').eq('plant_id', $selectedPlant.id).order('date', { ascending: false });
+      const { data: plantData } = await supabase.from('plants').select('*').eq('id', plantId).single();
+      const { data: logsData } = await supabase.from('growth_logs').select('*').eq('plant_id', plantId).order('date', { ascending: false });
       plantDetails = { ...plantData, logs: logsData || [] };
     }
     
+    selectedPlant.set(plantDetails); // Aggiorna lo store globale se serve
     isLoading = false;
   }
 
@@ -45,17 +46,17 @@
   <div class="text-center p-10"><p class="text-xl text-gray-500">Caricamento dettagli pianta...</p></div>
 {:else if !plantDetails}
   <div class="text-center p-10">
-    <p class="text-xl text-gray-500">Nessuna pianta selezionata o trovata.</p>
-    <button on:click={() => $page = 'dashboard'} class="mt-4 text-green-600 hover:underline">
+    <p class="text-xl text-gray-500">Nessuna pianta trovata con questo ID.</p>
+    <a href="/dashboard" use:link class="mt-4 text-green-600 hover:underline">
       ← Torna alla Dashboard
-    </button>
+    </a>
   </div>
 {:else}
   <div class="max-w-7xl mx-auto">
-    <button on:click={() => $page = 'dashboard'} class="mb-4 text-sm font-medium text-green-600 hover:underline flex items-center">
+    <a href="/dashboard" use:link class="mb-4 text-sm font-medium text-green-600 hover:underline flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
       Dashboard
-    </button>
+    </a>
 
     <header class="flex flex-col md:flex-row gap-6 mb-8">
       <img 

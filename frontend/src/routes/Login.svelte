@@ -1,6 +1,7 @@
 <script>
   import { supabase } from '../lib/services/supabaseClient.js';
-  import { page, user } from '../lib/stores/index.js'; // Importa anche lo store 'user'
+  import { user } from '../lib/stores/index.js';
+  import { push, link } from 'svelte-spa-router';
   
   let email = '';
   let password = '';
@@ -16,7 +17,7 @@
         password,
       });
       if (loginError) throw loginError;
-      // Successo! onAuthStateChange in App.svelte si occuperà del resto.
+      // Successo! onAuthStateChange in App.svelte si occuperÃ  del redirect a /dashboard
     } catch (e) {
       error = e.message || 'Credenziali non valide o errore di rete.';
     } finally {
@@ -24,19 +25,14 @@
     }
   }
 
-  // Funzione per la modalità demo: imposta un utente fittizio
   function handleDemoLogin() {
     user.set({
       id: 'demo-user',
       email: 'demo@xxx.com',
-      // Aggiungiamo i metadati che il resto dell'app potrebbe aspettarsi
+      created_at: new Date().toISOString(),
       user_metadata: { name: 'Utente Demo' }
     });
-    $page = 'dashboard'; // Naviga manualmente alla dashboard
-  }
-
-  function goToRegister() {
-    $page = 'register'; // Corretto: usa lo store per cambiare pagina
+    push('/dashboard'); // Naviga manualmente alla dashboard
   }
 </script>
 
@@ -90,7 +86,7 @@
         on:click={handleDemoLogin}
         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
       >
-        Accedi in modalità demo
+        Accedi in modalitÃ  demo
       </button>
     </div>
   </form>
@@ -99,9 +95,9 @@
   <div class="text-center mt-6">
     <p class="text-sm text-gray-600 dark:text-gray-400">
       Non hai un account?
-      <button  type="button" on:click={goToRegister} class="font-medium text-green-600 hover:text-green-500">
+      <a href="/register" use:link class="font-medium text-green-600 hover:text-green-500">
         Registrati
-      </button>
+      </a>
     </p>
   </div>
 </div>

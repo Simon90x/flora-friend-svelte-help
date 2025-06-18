@@ -1,6 +1,6 @@
 <script>
   import { supabase } from '../lib/services/supabaseClient.js';
-  import { page } from '../lib/stores/index.js';
+  import { link } from 'svelte-spa-router';
 
   let name = '';
   let email = '';
@@ -18,7 +18,6 @@
         email,
         password,
         options: {
-          // Puoi passare dati aggiuntivi che verranno salvati in user_metadata
           data: {
             full_name: name,
           }
@@ -26,12 +25,11 @@
       });
       if (signUpError) throw signUpError;
       
-      // Controlla se l'utente è stato creato ma richiede conferma email
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         successMessage = 'Registrazione quasi completata! Controlla la tua email per il link di conferma.';
       } else {
-        // Se la conferma non è richiesta, onAuthStateChange in App.svelte farà il resto
         successMessage = 'Registrazione completata! Verrai reindirizzato a breve.';
+        // onAuthStateChange in App.svelte gestirÃ  il redirect
       }
 
     } catch (e) {
@@ -39,10 +37,6 @@
     } finally {
       loading = false;
     }
-  }
-
-  function goToLogin() {
-    $page = 'login';
   }
 </script>
 
@@ -83,10 +77,10 @@
   <!-- Link Login -->
   <div class="text-center mt-6">
     <p class="text-sm text-gray-600 dark:text-gray-400">
-      Hai già un account?
-      <button on:click={goToLogin} class="font-medium text-green-600 hover:text-green-500">
+      Hai giÃ  un account?
+      <a href="/login" use:link class="font-medium text-green-600 hover:text-green-500">
         Accedi
-      </button>
+      </a>
     </p>
   </div>
 </div>
