@@ -21,7 +21,7 @@
 <button
 type="button"
   on:click={selectTab}
-  class="whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 rounded-t-lg"
+  class="whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
   class:border-green-500={$activeTab === name}
   class:text-green-600={$activeTab === name}
   class:dark:text-green-400={$activeTab === name}

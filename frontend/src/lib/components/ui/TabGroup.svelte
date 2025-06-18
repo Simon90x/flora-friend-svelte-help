@@ -22,7 +22,7 @@
     </nav>
   </div>
 
-  <div class="py-6">
+  <div class="py-4">
     <!-- 
       FIX: Espone il VALORE corrente di activeTab (usando $) al genitore.
       Il genitore lo riceverà con `let:activeTab`.

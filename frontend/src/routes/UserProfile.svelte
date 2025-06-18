@@ -100,7 +100,7 @@
     <div class="space-y-6">
       <!-- Avatar -->
       <div>
-        <label class="block text-sm font-medium text-gray-500 mb-2">Avatar</label>
+        <p class="block text-sm font-medium text-gray-500 mb-2">Avatar</p>
         <div class="flex items-center space-x-4">
           <img
             src={newAvatarBase64 ||
@@ -120,7 +120,7 @@
 
       <!-- Nome -->
       <div>
-        <label class="block text-sm font-medium text-gray-500">Nome</label>
+        <label for="userName" class="block text-sm font-medium text-gray-500">Nome</label>
         {#if isEditingName}
           <div class="flex items-center space-x-2 mt-1">
             <input type="text" bind:value={newName} class="w-full max-w-xs input" />
@@ -146,11 +146,11 @@
 
       <!-- Email (non modificabile) -->
       <div>
-        <label class="block text-sm font-medium text-gray-500">Email</label>
+        <p class="block text-sm font-medium text-gray-500">Email</p>
         <p class="text-lg text-gray-400">{currentUser.email}</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-500">Membro dal</label>
+        <p class="block text-sm font-medium text-gray-500">Membro dal</p>
         <p class="text-lg">{registrationDate.toLocaleDateString('it-IT')}</p>
       </div>
     </div>

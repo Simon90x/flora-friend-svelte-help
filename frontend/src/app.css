@@ -4,21 +4,78 @@
       Questa riga è FONDAMENTALE. */
 @import "tailwindcss";
 
-/* 2. Aggiungiamo le nostre personalizzazioni dentro a @layer per coerenza. */
+
 @layer base {
-  /* Stile per gli input di tipo date */
+  html {
+    /* 1. Manteniamo questa regola per garantire che la scrollbar sia sempre presente */
+    overflow-y: scroll;
+    
+    /* 2. Aggiungiamo il supporto per la scrollbar personalizzata anche su Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.green.400') theme('colors.gray.200');
+  }
+
+  .dark html {
+    /* Stile per Firefox in dark mode */
+    scrollbar-color: theme('colors.green.600') theme('colors.gray.800');
+  }
+
+  /* 3. Stile della scrollbar per browser WebKit (Chrome, Safari, etc.) */
+  html::-webkit-scrollbar {
+    width: 6px; /* Larghezza della scrollbar (equivalente a w-0.5 in Tailwind) */
+  }
+
+  html::-webkit-scrollbar-track {
+    background-color: #f3f4f6; /* Tailwind bg-gray-100 */
+  }
+  .dark html::-webkit-scrollbar-track {
+    background-color: #1f2937; /* Tailwind bg-gray-800 */
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background-color: #86efac; /* Tailwind bg-green-300 */
+    border-radius: 9999px;      /* Tailwind rounded-full */
+    border-width: 2px;          /* Tailwind border-2 */
+    border-style: solid;        /* Tailwind border-solid */
+    border-color: #f3f4f6;      /* Tailwind border-gray-100 */
+    /* Stile del "cursore" */
+  }
+  .dark html::-webkit-scrollbar-thumb {
+    background-color: #15803d;  /* Tailwind bg-green-700 */
+    border-color: #1f2937;      /* Tailwind border-gray-800 */
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background-color: #4ade80; /* Tailwind bg-green-400 */
+  }
+  .dark html::-webkit-scrollbar-thumb:hover {
+    background-color: #16a34a; /* Tailwind bg-green-600 */
+  }
+
+  /* ... (le altre regole per input[type="date"] rimangono qui sotto) ... */
   input[type="date"] {
-    @apply bg-transparent;
+    background-color: transparent;
   }
-
-  /* Stile per l'icona del calendario (solo su browser basati su WebKit come Chrome/Safari) */
+  
   input[type="date"]::-webkit-calendar-picker-indicator {
-    @apply cursor-pointer rounded-full bg-gray-300 p-1 transition-colors hover:bg-gray-400;
+      cursor: pointer;
+      border-radius: 9999px; /* rounded-full */
+      background-color: #d1d5db; /* bg-gray-300 */
+      padding: 0.25rem; /* p-1 */
+      transition-property: background-color;
+      transition-duration: 150ms;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+      background-color: #a3e635; /* bg-gray-400 */
   }
-
-  /* Stile per l'icona del calendario in dark mode */
+  
   .dark input[type="date"]::-webkit-calendar-picker-indicator {
-    @apply bg-gray-600 hover:bg-gray-500;
-    filter: invert(1); /* Inverte i colori dell'icona per renderla bianca */
+    background-color: #4b5563; /* Tailwind bg-gray-600 */
+    filter: invert(1);
+    transition-property: background-color;
+    transition-duration: 150ms;
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    background-color: #6b7280; /* Tailwind bg-gray-500 */
   }
 }

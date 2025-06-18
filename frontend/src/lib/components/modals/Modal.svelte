@@ -51,7 +51,10 @@
     <div
       class="fixed inset-0 bg-black/60"
       on:click={onClose}
-      transition:fly={{ duration: 200, y: 10, opacity: 0 }}
+      role="button"
+      tabindex="-1"
+      aria-label="Chiudi modale"
+      on:keydown={(e) => e.key === 'Escape' && onClose()}
     ></div>
 
     <!-- Contenuto effettivo della modale -->

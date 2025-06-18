@@ -41,6 +41,8 @@
     role="dialog"
     aria-modal="true"
     on:click|self={onClose}
+    on:keydown={() => {}} 
+    tabindex="-1" 
     transition:fade={{ duration: 200 }}
   >
     <!-- Pulsante di chiusura -->

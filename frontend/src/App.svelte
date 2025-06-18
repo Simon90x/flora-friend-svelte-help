@@ -7,7 +7,7 @@
   import { routes } from './routes.js';
   import ToastContainer from './lib/components/ui/ToastContainer.svelte';
   import Sidebar from './lib/components/layout/Sidebar.svelte';
-  import { fly } from 'svelte/transition'; // 1. Importa la transizione 'fly'
+  import { fade, fly } from 'svelte/transition'; // 1. Importa la transizione 'fly'
 
   let initialCheckDone = false;
 
@@ -61,14 +61,24 @@
 
 <main class="font-sans antialiased text-gray-900 dark:text-gray-100">
   {#if !initialCheckDone}
-    <div class="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+    <div
+      class="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900"
+      out:fade
+    >
       <p class="text-xl text-gray-500">Caricamento Flora Friend...</p>
     </div>
   {:else if !showAppLayout}
     <!-- Layout Autenticazione: le rotte pubbliche vengono renderizzate qui -->
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+    <div
+      class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4"
+      out:fade
+    >
       {#key $location}
-        <div in:fly={{ y: 20, duration: 300, delay: 300 }} out:fly={{ y: -20, duration: 200 }} class="w-full">
+        <div
+          in:fly={{ y: 20, duration: 300, delay: 300 }}
+          out:fly={{ y: -20, duration: 200 }}
+          class="w-full"
+        >
           <Router {routes} />
         </div>
       {/key}
@@ -80,9 +90,9 @@
       {#if $isSidebarOpen}
         <div
           class="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          on:click={closeSidebar}
+          on:keydown={(e) => e.key === 'Enter' && closeSidebar()}           
           role="button"
-          tabindex="-1"
+          tabindex="0"
           aria-label="Chiudi menu"
         ></div>
         <div class="fixed top-0 left-0 h-full z-40 lg:hidden">
@@ -121,7 +131,7 @@
         <!-- Contenitore della Vista Attiva (gestito dal router) -->
         <div class="p-4 sm:p-6 lg:p-8">
           {#key $location}
-            <div in:fly={{ y: 15, duration: 250, delay: 250 }} out:fly={{ y: -15, duration: 200 }}>
+            <div in:fly={{ y: 10, duration: 200, delay: 150 }} out:fly={{ y: -10, duration: 200 }}>
               <Router {routes} />
             </div>
           {/key}
