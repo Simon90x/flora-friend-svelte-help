@@ -6,7 +6,6 @@
   const dispatch = createEventDispatcher();
 
   function handleClick() {
-    // Invia un evento al genitore (Dashboard) con i dati della pianta
     dispatch('navigateToDetail', { plant });
   }
 </script>
@@ -18,7 +17,7 @@
     aria-label="Vedi dettagli per {plant.name}"
 >
     <div class="relative">
-        <img src={plant.cover_image_url || 'https://via.placeholder.com/400x300.png?text=No+Image'} alt="Immagine di {plant.name}" class="h-48 w-full object-cover rounded-t-xl">
+        <img src={plant.cover_image_url || 'https://placehold.co/400x300/e2e8f0/4a5568?text=No+Image'} alt="Immagine di {plant.name}" class="h-48 w-full object-cover rounded-t-xl">
     </div>
     <div class="p-5">
         <h3 class="font-bold text-lg text-gray-800 dark:text-gray-100 truncate">{plant.name}</h3>

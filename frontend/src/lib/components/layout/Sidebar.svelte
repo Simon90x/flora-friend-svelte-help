@@ -11,26 +11,34 @@
       push('/login');
     } else {
       await supabase.auth.signOut();
-      // onAuthStateChange in App.svelte gestirÃ  il redirect
     }
   }
 
   function onNavigate() {
-    isSidebarOpen.set(false); // Chiudi la sidebar dopo la navigazione
+    // Chiudi la sidebar dopo la navigazione su mobile
+    if (window.innerWidth < 1024) {
+      isSidebarOpen.set(false);
+    }
   }
 </script>
 
 <aside class="flex flex-col h-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-lg w-64 p-4">
-  <div class="text-center mb-8">
+  <div class="flex justify-between items-center text-center mb-8">
     <a href="/dashboard" use:link on:click={onNavigate} class="flex items-center justify-center space-x-2">
       <span class="text-2xl font-bold text-green-600">FloraFriend</span>
     </a>
+    <!-- Pulsante di chiusura visibile solo su mobile (lg:hidden) -->
+    <button on:click={() => isSidebarOpen.set(false)} class="lg:hidden text-gray-500 hover:text-gray-800 dark:hover:text-gray-200" aria-label="Chiudi menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
   </div>
 
   <nav class="flex-grow">
     <ul class="space-y-2">
       <li>
-        <a href="/dashboard" use:link on:click={onNavigate} class:active={$location.startsWith('/dashboard')} class="nav-link">
+        <a href="/dashboard" use:link on:click={onNavigate} class:active={$location === '/dashboard'} class="nav-link">
           Dashboard
         </a>
       </li>
@@ -39,34 +47,35 @@
           Profilo
         </a>
       </li>
-       <!-- Esempio link a dettaglio pianta, per mostrare lo stato attivo -->
-      <li>
-        <a href="/plant/demo-plant-1" use:link on:click={onNavigate} class:active={$location.startsWith('/plant/')} class="nav-link">
-         Dettaglio Pianta (Demo)
-        </a>
-      </li>
     </ul>
   </nav>
 
-  <!-- Sezione Personalizzazione UI -->
+  <!-- Sezione Personalizzazione UI (Placeholder) -->
   <div class="mb-4">
     <h3 class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Personalizza</h3>
-    <!-- Qui andranno i componenti per tema, lingua, etc. -->
     <p class="px-4 text-sm text-gray-400">Opzioni tema in arrivo...</p>
   </div>
 
   {#if $user}
   <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-    <div class="flex items-center space-x-3 mb-4 px-2">
-      <div class="w-10 h-10 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold">
-        {$user.user_metadata?.full_name?.charAt(0) || $user.user_metadata?.name?.charAt(0) || $user.email.charAt(0).toUpperCase()}
-      </div>
-      <div class="flex-1 overflow-hidden">
-        <p class="font-semibold truncate">{$user.user_metadata?.full_name || $user.user_metadata?.name || 'Utente'}</p>
-        <p class="text-xs text-gray-500 truncate">{$user.email}</p>
-      </div>
-    </div>
-    <button on:click={handleLogout} class="w-full text-left px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-900 dark:text-red-300">
+    <!-- FIX: Avvolto l'intero blocco in un link cliccabile -->
+    <a href="/profile" use:link on:click={onNavigate} class="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0">
+                <img 
+                    src={$user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent($user.user_metadata?.name || $user.email)}&background=random`} 
+                    alt="Avatar utente" 
+                    class="w-10 h-10 rounded-full object-cover"
+                >
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <p class="font-semibold truncate">{$user.user_metadata?.full_name || $user.user_metadata?.name || 'Utente'}</p>
+                <p class="text-xs text-gray-500 truncate">{$user.email}</p>
+            </div>
+        </div>
+    </a>
+    
+    <button on:click={handleLogout} class="mt-4 w-full text-left px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/50 dark:hover:bg-red-900 dark:text-red-300">
       Logout
     </button>
   </div>

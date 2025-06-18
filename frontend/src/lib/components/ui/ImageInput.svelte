@@ -9,17 +9,17 @@
   let isLoading = false;
   let isDragging = false;
   let error = '';
-  let fileInput;         // ref per l'input
+  let fileInput; // ref per l'input
 
   const dispatch = createEventDispatcher();
 
-  // --- Esempio: gestione file via input ---
+  // --- Gestione file via input ---
   async function handleFileSelect() {
     const file = fileInput.files[0];
     if (file) await processFile(file);
   }
 
-  // --- Esempio: gestione drag & drop ---
+  // --- Gestione drag & drop ---
   function handleDragOver(event) {
     event.preventDefault();
     isDragging = true;
@@ -32,6 +32,11 @@
     isDragging = false;
     const file = event.dataTransfer.files[0];
     if (file) await processFile(file);
+  }
+  
+  // FIX: Funzione per attivare il click sull'input
+  function triggerFileInput() {
+    fileInput.click();
   }
 
   // --- Logica di compressione/ridimensionamento ---
@@ -59,7 +64,7 @@
   function removeImage() {
     preview = null;
     dispatch('imageChange', { base64: null });
-    fileInput.value = '';  // reset visivo
+    if(fileInput) fileInput.value = '';  // reset visivo
   }
 </script>
 
@@ -79,7 +84,6 @@
           class="text-white bg-red-600 hover:bg-red-700 rounded-full p-2"
           aria-label="Rimuovi immagine"
         >
-          <!-- icona cestino -->
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -91,13 +95,17 @@
   {:else}
     <!-- Upload zone -->
     <div
-      class="mt-1 relative border-2 border-dashed rounded-lg p-6 text-center transition-colors
+      class="mt-1 relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
              {isDragging 
                ? 'border-green-500 bg-green-50 dark:bg-gray-700/50' 
-               : 'border-gray-300 dark:border-gray-600'}"
+               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'}"
       on:dragover|preventDefault={handleDragOver}
       on:dragleave={handleDragLeave}
       on:drop|preventDefault={handleDrop}
+      on:click={triggerFileInput}
+      role="button"
+      tabindex="0"
+      on:keydown={(e) => { if(e.key === 'Enter' || e.key === ' ') triggerFileInput() }}
     >
       <input
         bind:this={fileInput}
@@ -106,6 +114,7 @@
         accept="image/*"
         disabled={isLoading}
         on:change={handleFileSelect}
+        id="file-upload-input"
       />
 
       {#if isLoading}
@@ -131,7 +140,8 @@
                      0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          <label for="file-upload" class="relative cursor-pointer">
+          <!-- FIX: La label ora punta all'ID corretto dell'input, ma il click è gestito dal contenitore. -->
+          <label for="file-upload-input" class="relative cursor-pointer">
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
               <span class="font-medium text-green-600 hover:text-green-500">Carica un file</span> o trascinalo qui
             </p>

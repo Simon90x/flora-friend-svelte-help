@@ -1,13 +1,11 @@
 // frontend/src/lib/services/mockData.js
+import { writable } from 'svelte/store';
+import { user } from '../stores/index.js';
 
 /**
- * Servizio per gestire i dati della modalità demo in memoria.
- * Simula un backend senza effettuare chiamate di rete.
- * Questo permette un'esperienza utente completa e interattiva.
+ * Dati iniziali fittizi per la modalità demo.
+ * Questa struttura definisce la "forma" del nostro database in-memory.
  */
-import { writable } from 'svelte/store';
-
-// Dati iniziali fittizi
 const initialData = {
   plants: [
     { 
@@ -38,60 +36,100 @@ const initialData = {
        { id: 'log3', plant_id: 'demo-plant-2', date: '2023-11-05', notes: 'Le foglie sembrano molto rigogliose.', photo_url: 'https://images.unsplash.com/photo-1587843400582-c55985d8931b?w=500&q=80', height_cm: 25 },
     ]
   },
-  // Aggiungere qui healthLogs e aiAdvices se necessario
+  healthLogs: {
+    'demo-plant-1': [
+      { id: 'health1', plant_id: 'demo-plant-1', date: '2023-11-20', type: 'Miglioramento', notes: 'Le nuove foglie sono di un verde brillante.', severity: 'Bassa' }
+    ]
+  },
+  aiAdvices: {
+    'demo-plant-1': [
+      { id: 'ai1', plant_id: 'demo-plant-1', date: '2023-11-18', question: 'Come tratto le macchie marroni sulle foglie?', image_url: null, answer: 'Le macchie marroni sulla Monstera possono indicare troppa acqua. Assicurati che il terreno si asciughi tra un\'annaffiatura e l\'altra. Controlla anche che il vaso abbia un buon drenaggio.' }
+    ]
+  }
 };
 
-// Creiamo uno store writable con i dati iniziali per renderli reattivi
-const demoDataStore = writable(initialData);
+// Creiamo uno store writable con una copia profonda dei dati iniziali.
+// Questo è cruciale per poter resettare lo stato se necessario.
+const demoDataStore = writable(JSON.parse(JSON.stringify(initialData)));
+
 
 // Funzioni che simulano le chiamate API
 export const mockApi = {
-  getPlants: () => {
-    return new Promise(resolve => {
-        demoDataStore.subscribe(data => resolve(data.plants))();
-    });
-  },
+  getPlants: () => new Promise(resolve => {
+    demoDataStore.subscribe(data => resolve(data.plants))();
+  }),
 
-  getPlantDetails: (plantId) => {
-    return new Promise(resolve => {
-        demoDataStore.subscribe(data => {
-            const plant = data.plants.find(p => p.id === plantId);
-            const logs = data.growthLogs[plantId] || [];
-            resolve({ ...plant, logs });
-        })();
-    });
-  },
+  getPlantDetails: (plantId) => new Promise(resolve => {
+    demoDataStore.subscribe(data => {
+      const plant = data.plants.find(p => p.id === plantId);
+      if (!plant) {
+        resolve(null);
+        return;
+      }
+      const logs = data.growthLogs[plantId] || [];
+      const health = data.healthLogs[plantId] || [];
+      const advices = data.aiAdvices[plantId] || [];
+      resolve({ ...plant, logs, healthLogs: health, aiAdvices: advices });
+    })();
+  }),
 
-  addPlant: (plantData) => {
-    return new Promise(resolve => {
-        const newPlant = {
-            ...plantData,
-            id: `demo-plant-${Date.now()}`,
-            user_id: 'demo-user',
-        };
-        demoDataStore.update(data => {
-            data.plants = [newPlant, ...data.plants];
-            return data;
-        });
-        resolve(newPlant);
+  addPlant: (plantData) => new Promise(resolve => {
+    const newPlant = { ...plantData, id: `demo-plant-${Date.now()}`, user_id: 'demo-user' };
+    demoDataStore.update(data => {
+      // Questa riga è sicura solo se 'data.plants' è un array
+      data.plants = [newPlant, ...data.plants];
+      return data;
     });
-  },
-  
-  addGrowthLog: (plantId, logData) => {
-    return new Promise(resolve => {
-      const newLog = {
-        ...logData,
-        id: `log-${Date.now()}`,
-        plant_id: plantId,
-      };
-      demoDataStore.update(data => {
-        if (!data.growthLogs[plantId]) {
-          data.growthLogs[plantId] = [];
-        }
-        data.growthLogs[plantId] = [newLog, ...data.growthLogs[plantId]];
+    resolve(newPlant);
+  }),
+
+  deletePlant: (plantId) => new Promise(resolve => {
+    demoDataStore.update(data => {
+        data.plants = data.plants.filter(p => p.id !== plantId);
+        delete data.growthLogs[plantId];
+        delete data.healthLogs[plantId];
+        delete data.aiAdvices[plantId];
         return data;
-      });
-      resolve(newLog);
     });
-  }
+    resolve({ success: true });
+  }),
+  
+  addGrowthLog: (plantId, logData) => new Promise(resolve => {
+    const newLog = { ...logData, id: `log-${Date.now()}`, plant_id: plantId };
+    demoDataStore.update(data => {
+      if (!data.growthLogs[plantId]) data.growthLogs[plantId] = [];
+      data.growthLogs[plantId] = [newLog, ...data.growthLogs[plantId]].sort((a,b) => new Date(b.date) - new Date(a.date));
+      return data;
+    });
+    resolve(newLog);
+  }),
+
+  deleteGrowthLog: (plantId, logId) => new Promise(resolve => {
+    demoDataStore.update(data => {
+        if(data.growthLogs[plantId]) {
+            data.growthLogs[plantId] = data.growthLogs[plantId].filter(log => log.id !== logId);
+        }
+        return data;
+    });
+    resolve({ success: true });
+  }),
+
+  updateUserProfile: (updateData) => new Promise(resolve => {
+    user.update(currentUser => {
+      const updatedUser = {
+        ...currentUser,
+        user_metadata: {
+          ...currentUser.user_metadata,
+          ...updateData
+        }
+      };
+      resolve(updatedUser);
+      return updatedUser;
+    });
+  }),
+
+  deleteUser: () => new Promise(resolve => {
+    user.set(null);
+    resolve({ success: true });
+  })
 };

@@ -40,13 +40,10 @@
           species: plantSpecies,
           date_added: acquisitionDate,
           notes: notes,
-          // In una demo, l'URL dell'immagine potrebbe essere il base64 stesso per semplicità
-          cover_image_url: coverImageBase64 || 'https://via.placeholder.com/400x300.png?text=No+Image',
+          cover_image_url: coverImageBase64 || 'https://placehold.co/400x300/e2e8f0/4a5568?text=No+Image',
         });
       } else {
         // --- REAL API CALL ---
-        // MOCK API BLUEPRINT: POST /storage/v1/object/plant-images/...
-        // MOCK API BLUEPRINT: POST /rest/v1/plants
         let imageUrl = null;
         if (coverImageBase64) {
           const fileName = `public/${$user.id}/${Date.now()}.jpg`;
@@ -84,7 +81,7 @@
     }
   }
 </script>
-
+<!-- ... (il resto del template rimane identico) ... -->
 <div class="p-6">
   <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Aggiungi una nuova pianta</h2>
   
