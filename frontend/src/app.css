@@ -1,2 +1,24 @@
 /* src/app.css */
+
+/* 1. Assicuriamoci che l'import originale di Tailwind sia presente e corretto.
+      Questa riga è FONDAMENTALE. */
 @import "tailwindcss";
+
+/* 2. Aggiungiamo le nostre personalizzazioni dentro a @layer per coerenza. */
+@layer base {
+  /* Stile per gli input di tipo date */
+  input[type="date"] {
+    @apply bg-transparent;
+  }
+
+  /* Stile per l'icona del calendario (solo su browser basati su WebKit come Chrome/Safari) */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer rounded-full bg-gray-300 p-1 transition-colors hover:bg-gray-400;
+  }
+
+  /* Stile per l'icona del calendario in dark mode */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    @apply bg-gray-600 hover:bg-gray-500;
+    filter: invert(1); /* Inverte i colori dell'icona per renderla bianca */
+  }
+}

@@ -38,9 +38,9 @@
       variant="primary"
       className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
       on:click={onConfirm}
-      disabled={isLoading}
+      loading={isLoading}
     >
-      {isLoading ? 'Conferma...' : confirmText}
+      {confirmText}
     </Button>
     <Button
       variant="ghost"

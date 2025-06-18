@@ -47,7 +47,10 @@
   function applySuggestion() {
     if (suggestion && suggestion.species) {
         plantSpecies = suggestion.species;
-        suggestion = null; // Nascondi il suggerimento dopo l'applicazione
+        plantSpecies = plantSpecies;
+
+        suggestion = null; // Nascondi il suggerimento
+        isSuggesting = false; // Resetta lo stato del pulsante
     }
   }
 
@@ -116,7 +119,7 @@
         
         {#if suggestion && suggestion.species}
             <div 
-                class="absolute bottom-2 left-2 right-2 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90 backdrop-blur-sm"
+                class="absolute bottom-10 left-10 right-10 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90 backdrop-blur-sm"
                 on:click={applySuggestion}
                 role="button"
                 tabindex="0"
@@ -170,7 +173,7 @@
       <Button type="button" variant="ghost" on:click={() => dispatch('close')} disabled={isLoading}>
         Annulla
       </Button>
-      <Button type="submit" variant="primary" disabled={isLoading}>
+      <Button type="submit" variant="primary" loading={isLoading}>
         {isLoading ? 'Salvataggio...' : 'Salva Pianta'}
       </Button>
     </div>

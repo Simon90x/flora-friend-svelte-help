@@ -3,6 +3,9 @@
   import { supabase } from '../../services/supabaseClient.js';
   import { link, location } from 'svelte-spa-router';
   import { push } from 'svelte-spa-router';
+import HomeIcon from '../ui/icons/HomeIcon.svelte';
+import UserCircleIcon from '../ui/icons/UserCircleIcon.svelte';
+import LeafIcon from '../ui/icons/LeafIcon.svelte'; // Assumendo esista
 
   async function handleLogout() {
     isSidebarOpen.set(false);
@@ -25,6 +28,7 @@
 <aside class="flex flex-col h-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-lg w-64 p-4">
   <div class="flex justify-between items-center text-center mb-8">
     <a href="/dashboard" use:link on:click={onNavigate} class="flex items-center justify-center space-x-2">
+         <div class="w-8 h-8 text-green-600"><LeafIcon /></div>
       <span class="text-2xl font-bold text-green-600">FloraFriend</span>
     </a>
     <!-- Pulsante di chiusura visibile solo su mobile (lg:hidden) -->
@@ -36,15 +40,18 @@
   </div>
 
   <nav class="flex-grow">
-    <ul class="space-y-2">
+    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
+    <ul class="space-y-1">
       <li>
-        <a href="/dashboard" use:link on:click={onNavigate} class:active={$location === '/dashboard'} class="nav-link">
-          Dashboard
+        <a href="/dashboard" use:link on:click={onNavigate} class:active={$location === '/dashboard'} class="flex items-center justify-left space-x-2 nav-link">
+             <div class="w-8 h-8 text-green-600"><HomeIcon /></div>
+          <span class="text-2xl font-bold text-green-600">Dashboard</span>
         </a>
       </li>
       <li>
-        <a href="/profile" use:link on:click={onNavigate} class:active={$location.startsWith('/profile')} class="nav-link">
-          Profilo
+        <a href="/profile" use:link on:click={onNavigate} class:active={$location.startsWith('/profile')} class="flex items-center justify-left space-x-2 nav-link">
+          <div class="w-8 h-8 text-green-600"><UserCircleIcon /></div>
+          <span class="text-2xl font-bold text-green-600">Profilo</span>
         </a>
       </li>
     </ul>
@@ -81,7 +88,7 @@
 
 <style>
   .nav-link {
-    @apply w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 block transition-colors;
+    @apply w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors;
   }
   .nav-link.active {
     @apply bg-green-100 dark:bg-green-900/60 font-semibold text-green-700 dark:text-green-200;

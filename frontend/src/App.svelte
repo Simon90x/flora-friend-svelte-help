@@ -1,12 +1,13 @@
 <script>
   import { onMount } from 'svelte';
-  import  Router, {location,link } from 'svelte-spa-router';
+  import Router, { location, link } from 'svelte-spa-router';
   import { push } from 'svelte-spa-router';
   import { user, isSidebarOpen } from './lib/stores/index.js';
   import { supabase } from './lib/services/supabaseClient.js';
   import { routes } from './routes.js';
-
+  import ToastContainer from './lib/components/ui/ToastContainer.svelte';
   import Sidebar from './lib/components/layout/Sidebar.svelte';
+  import { fly } from 'svelte/transition'; // 1. Importa la transizione 'fly'
 
   let initialCheckDone = false;
 
@@ -15,7 +16,9 @@
     supabase.auth.getSession().then(({ data: { session } }) => {
       // Non modificare l'utente se siamo in demo mode
       let isDemo = false;
-      const unsubscribe = user.subscribe(u => { isDemo = u?.id === 'demo-user' });
+      const unsubscribe = user.subscribe((u) => {
+        isDemo = u?.id === 'demo-user';
+      });
       unsubscribe();
       if (!isDemo) {
         user.set(session?.user ?? null);
@@ -26,9 +29,11 @@
     // Listener per i cambi di stato autenticazione
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       let isDemo = false;
-      const unsubscribe = user.subscribe(u => { isDemo = u?.id === 'demo-user' });
+      const unsubscribe = user.subscribe((u) => {
+        isDemo = u?.id === 'demo-user';
+      });
       unsubscribe();
-      
+
       const currentUser = session?.user ?? null;
       user.set(currentUser);
 
@@ -52,6 +57,8 @@
   $: showAppLayout = $user !== null;
 </script>
 
+<ToastContainer />
+
 <main class="font-sans antialiased text-gray-900 dark:text-gray-100">
   {#if !initialCheckDone}
     <div class="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
@@ -60,22 +67,26 @@
   {:else if !showAppLayout}
     <!-- Layout Autenticazione: le rotte pubbliche vengono renderizzate qui -->
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-      <Router {routes} />
+      {#key $location}
+        <div in:fly={{ y: 20, duration: 300, delay: 300 }} out:fly={{ y: -20, duration: 200 }} class="w-full">
+          <Router {routes} />
+        </div>
+      {/key}
     </div>
   {:else}
     <!-- Layout Applicazione Principale -->
     <div class="relative min-h-screen lg:flex">
       <!-- Sidebar Mobile (a comparsa) -->
       {#if $isSidebarOpen}
-        <div 
-          class="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+        <div
+          class="fixed inset-0 bg-black/50 z-30 lg:hidden"
           on:click={closeSidebar}
           role="button"
           tabindex="-1"
           aria-label="Chiudi menu"
         ></div>
         <div class="fixed top-0 left-0 h-full z-40 lg:hidden">
-            <Sidebar />
+          <Sidebar />
         </div>
       {/if}
 
@@ -85,18 +96,35 @@
       </aside>
 
       <!-- Contenuto Principale -->
-      <div class="flex-1 bg-gray-100 dark:bg-gray-800">
+      <div class="flex-1 bg-gray-100 dark:bg-gray-800 overflow-x-hidden">
         <!-- Header Mobile -->
-        <header class="lg:hidden sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm p-4 z-20 flex items-center">
-            <button on:click={() => isSidebarOpen.set(true)} aria-label="Apri menu" class="text-gray-700 dark:text-gray-200">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-            </button>
-            <span class="ml-4 font-bold text-lg text-green-600">FloraFriend</span>
+        <header
+          class="lg:hidden sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm p-4 z-20 flex items-center"
+        >
+          <button
+            on:click={() => isSidebarOpen.set(true)}
+            aria-label="Apri menu"
+            class="text-gray-700 dark:text-gray-200"
+          >
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              /></svg
+            >
+          </button>
+          <span class="ml-4 font-bold text-lg text-green-600">FloraFriend</span>
         </header>
 
         <!-- Contenitore della Vista Attiva (gestito dal router) -->
         <div class="p-4 sm:p-6 lg:p-8">
-          <Router {routes} />
+          {#key $location}
+            <div in:fly={{ y: 15, duration: 250, delay: 250 }} out:fly={{ y: -15, duration: 200 }}>
+              <Router {routes} />
+            </div>
+          {/key}
         </div>
       </div>
     </div>

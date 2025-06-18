@@ -13,6 +13,8 @@
   import LeafIcon from '../lib/components/ui/icons/LeafIcon.svelte';
   import Modal from '../lib/components/modals/Modal.svelte';
   import AddPlantForm from '../lib/components/forms/AddPlantForm.svelte';
+  import { fly } from 'svelte/transition'; // 1. Importa la transizione
+  import { flip } from 'svelte/animate'; // 2. Importa l'animazione
 
   let plants = [];
   let isLoading = true;
@@ -56,15 +58,15 @@
 <div class="max-w-7xl mx-auto">
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">Le Tue Piante</h1>
-    <Button on:click={() => isModalOpen = true} variant="primary">
+    <Button on:click={() => (isModalOpen = true)} variant="primary">
       <span slot="leftIcon"><PlusIcon /></span>
       Aggiungi Pianta
     </Button>
   </div>
 
-  <Modal isOpen={isModalOpen} onClose={() => isModalOpen = false} size="lg">
+  <Modal isOpen={isModalOpen} onClose={() => (isModalOpen = false)} size="lg">
     <AddPlantForm
-      on:close={() => isModalOpen = false}
+      on:close={() => (isModalOpen = false)}
       onSuccess={() => {
         isModalOpen = false;
         loadPlants();
@@ -85,7 +87,7 @@
       title="Nessuna pianta trovata"
       message="Inizia aggiungendo la tua prima pianta per monitorarla."
       actionText="Aggiungi la tua prima pianta"
-      on:actionClick={() => isModalOpen = true}
+      on:actionClick={() => (isModalOpen = true)}
     >
       <svelte:fragment slot="icon">
         <LeafIcon class="w-24 h-24" />
@@ -93,8 +95,10 @@
     </EmptyState>
   {:else}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {#each plants as plant (plant.id)}
-        <PlantCard {plant} on:navigateToDetail={handleNavigateToDetail} />
+      {#each plants as plant, i (plant.id)}
+        <div in:fly={{ y: 20, duration: 250, delay: i * 50 }} animate:flip={{ duration: 300 }}>
+          <PlantCard {plant} on:navigateToDetail={handleNavigateToDetail} />
+        </div>
       {/each}
     </div>
   {/if}

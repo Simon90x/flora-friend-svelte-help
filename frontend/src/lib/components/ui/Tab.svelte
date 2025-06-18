@@ -19,9 +19,9 @@
 </script>
 
 <button
-  type="button"
+type="button"
   on:click={selectTab}
-  class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 rounded-t-md"
+  class="whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 rounded-t-lg"
   class:border-green-500={$activeTab === name}
   class:text-green-600={$activeTab === name}
   class:dark:text-green-400={$activeTab === name}

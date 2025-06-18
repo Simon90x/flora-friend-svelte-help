@@ -1,9 +1,23 @@
 <script>
   import EmptyState from '../ui/EmptyState.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let logs = [];
+  
+  const dispatch = createEventDispatcher();
 
-  $: photos = logs.map(log => log.photo_url).filter(Boolean);
+  $: photos = logs.map(log => ({
+    url: log.photo_url,
+    date: new Date(log.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+  })).filter(p => p.url);
+
+  function openViewer(index) {
+    // Comunica al genitore di aprire il visualizzatore
+    dispatch('openImageViewer', {
+      images: photos.map(p => p.url),
+      startIndex: index
+    });
+  }
 </script>
 
 <div>
@@ -16,15 +30,18 @@
     />
   {:else}
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {#each photos as photoUrl, i (photoUrl + i)}
-        <div class="aspect-w-1 aspect-h-1">
+      {#each photos as photo, i (photo.url + i)}
+        <button on:click={() => openViewer(i)} class="aspect-w-1 aspect-h-1 block group relative">
           <img 
-            src={photoUrl} 
-            alt="Foto del diario" 
-            class="w-full h-full object-cover rounded-lg shadow-md hover:scale-105 transition-transform duration-200 cursor-pointer"
+            src={photo.url} 
+            alt="Foto del diario del {photo.date}" 
+            class="w-full h-full object-cover rounded-lg shadow-md group-hover:scale-105 transition-transform duration-200"
             loading="lazy"
           >
-        </div>
+          <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 rounded-lg">
+            <p class="text-white text-xs font-semibold">{photo.date}</p>
+          </div>
+        </button>
       {/each}
     </div>
   {/if}
