@@ -1,11 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-//  import { user } from '../lib/stores/index.js';
-//  import { supabase } from '../lib/services/supabaseClient.js';
-//  import { mockApi } from '../lib/services/mockData.js';
   import { push } from 'svelte-spa-router';
   import { api } from '../lib/services/api.js';
   import { toast } from '../lib/stores/notifications.js';
+  import { user } from '../lib/stores/index.js'; // Aggiungi questa importazione se non c'è
+
 
   import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
@@ -22,6 +21,10 @@
   let isLoading = true;
   let error = '';
   let isModalOpen = false;
+
+  let currentUser;
+  user.subscribe(u => currentUser = u);
+
 
   onMount(() => {
     loadPlants();
@@ -48,6 +51,15 @@
 </script>
 
 <div class="max-w-7xl mx-auto">
+    <div class="mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
+      Bentornato, {currentUser?.user_metadata?.full_name || 'Giardiniere'}!
+    </h1>
+    <p class="text-lg text-gray-500 dark:text-gray-400 mt-1">
+      
+    </p>
+  </div>
+
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">Le Tue Piante</h1>
     <Button on:click={() => (isModalOpen = true)} variant="primary">
