@@ -1,9 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { user } from '../lib/stores/index.js';
-  import { supabase } from '../lib/services/supabaseClient.js';
-  import { mockApi } from '../lib/services/mockData.js';
+//  import { user } from '../lib/stores/index.js';
+//  import { supabase } from '../lib/services/supabaseClient.js';
+//  import { mockApi } from '../lib/services/mockData.js';
   import { push } from 'svelte-spa-router';
+  import { api } from '../lib/services/api.js';
+  import { toast } from '../lib/stores/notifications.js';
 
   import PlantCard from '../lib/components/ui/PlantCard.svelte';
   import PlantCardSkeleton from '../lib/components/skeletons/PlantCardSkeleton.svelte';
@@ -29,21 +31,11 @@
     isLoading = true;
     error = '';
     try {
-      let data;
-      if ($user.id === 'demo-user') {
-        data = await mockApi.getPlants();
-      } else {
-        const { data: realData, error: fetchError } = await supabase
-          .from('plants')
-          .select('*')
-          .eq('user_id', $user.id)
-          .order('created_at', { ascending: false });
-        if (fetchError) throw fetchError;
-        data = realData;
-      }
-      plants = data || [];
+   plants = await api.getPlants();
     } catch (e) {
-      error = 'Impossibile caricare le piante: ' + e.message;
+      console.error('Errore nel caricamento delle piante:', e);
+      error = 'Impossibile caricare le piante in questo momento.';
+      toast.push(e.message || error, { type: 'error' });
     } finally {
       isLoading = false;
     }

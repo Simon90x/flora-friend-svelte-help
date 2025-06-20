@@ -1,12 +1,20 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { mockApi } from '../../services/mockData.js'; // Assumeremo che mockApi venga esteso
+  // RIMOSSO: `mockApi`
+  // import { mockApi } from '../../services/mockData.js';
+  
+  // AGGIUNTO: Le nostre nuove dipendenze
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+
+  // Importazioni componenti UI (invariate)
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
 
   export let plantId;
   export let onSuccess = () => {};
 
+  // Stato del form (invariato)
   let logDate = new Date().toISOString().split('T')[0];
   let type = 'Miglioramento';
   let severity = '';
@@ -31,25 +39,38 @@
     photoBase64 = event.detail.base64;
   }
 
+  // --- MODIFICA PRINCIPALE: handleSubmit ---
   async function handleSubmit() {
     if (!notes.trim() || !type) {
       error = 'Il tipo di osservazione e le note sono obbligatori.';
       return;
     }
+
     isLoading = true;
     error = '';
+
     try {
-      await mockApi.addHealthLog(plantId, {
+      // 1. Prepariamo l'oggetto con i dati della nota
+      const logData = {
         date: logDate,
-        type,
-        severity: severity || null,
-        notes,
-        photo_url: photoBase64,
-      });
+        type: type,
+        severity: severity || null, // Invia null se la stringa è vuota
+        notes: notes,
+      };
+
+      // 2. Chiamiamo la nostra API centralizzata.
+      //    `photoBase64` può essere null, e `api.addHealthLog` lo gestirà.
+      await api.addHealthLog(plantId, logData, photoBase64);
+
+      // 3. Notifica di successo e chiusura
+      toast.push('Nota sulla salute aggiunta!', { type: 'success' });
       onSuccess();
       dispatch('close');
+
     } catch (e) {
-      error = 'Si è verificato un errore nel salvataggio.';
+      console.error('Errore nel salvataggio della nota:', e);
+      error = e.message || 'Si è verificato un errore nel salvataggio.';
+      toast.push(error, { type: 'error' });
     } finally {
       isLoading = false;
     }
@@ -125,18 +146,19 @@
       <Button type="button" variant="ghost" on:click={() => dispatch('close')} disabled={isLoading}
         >Annulla</Button
       >
-      <Button type="submit" variant="primary" disabled={isLoading}>
+      <!-- MODIFICATO: Passiamo `loading` al Button per lo spinner -->
+      <Button type="submit" variant="primary" loading={isLoading} disabled={isLoading}>
         {isLoading ? 'Salvataggio...' : 'Salva Nota'}
       </Button>
     </div>
   </form>
 </div>
 
+<!-- Lo stile rimane invariato -->
 <style>
   .input {
     @apply block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 appearance-none;
   }
-  /* Stiliamo il div che contiene la select per aggiungere la nostra freccia */
   .select-wrapper {
     @apply relative;
   }

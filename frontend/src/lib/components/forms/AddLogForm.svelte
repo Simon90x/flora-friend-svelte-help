@@ -1,12 +1,20 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { mockApi } from '../../services/mockData.js';
+  // RIMOSSO: `mockApi` non è più la dipendenza principale
+  // import { mockApi } from '../../services/mockData.js';
+  
+  // AGGIUNTO: Le nostre nuove dipendenze
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+
+  // Importazioni dei componenti UI (invariate)
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
 
   export let plantId;
   export let onSuccess = () => {};
 
+  // Stato del form (invariato)
   let logDate = new Date().toISOString().split('T')[0];
   let notes = '';
   let height = null;
@@ -21,6 +29,7 @@
     photoBase64 = event.detail.base64;
   }
 
+  // --- MODIFICA PRINCIPALE: handleSubmit ---
   async function handleSubmit() {
     if (!photoBase64) {
       error = 'La foto è obbligatoria per un log di crescita.';
@@ -31,19 +40,28 @@
     error = '';
 
     try {
-      await mockApi.addGrowthLog(plantId, {
+      // 1. Prepariamo l'oggetto con i dati del log
+      const logData = {
         date: logDate,
         notes: notes,
         height_cm: height,
-        photo_url: photoBase64, // In demo, il base64 funge da URL
-      });
+        // Nota: non passiamo `photo_url` qui, perché l'immagine
+        // viene passata come argomento separato alla nostra API.
+      };
+
+      // 2. Chiamiamo la nostra API centralizzata.
+      //    `api.addGrowthLog` gestirà l'upload dell'immagine e l'inserimento nel DB.
+      await api.addGrowthLog(plantId, logData, photoBase64);
       
+      // 3. Notifica di successo e chiusura
+      toast.push('Log di crescita aggiunto!', { type: 'success' });
       onSuccess();
       dispatch('close');
 
     } catch (e) {
       console.error('Errore nel salvataggio del log:', e);
       error = e.message || 'Si è verificato un errore imprevisto.';
+      toast.push(error, { type: 'error' });
     } finally {
       isLoading = false;
     }
@@ -79,7 +97,8 @@
       <Button type="button" variant="ghost" on:click={() => dispatch('close')} disabled={isLoading}>
         Annulla
       </Button>
-      <Button type="submit" variant="primary" disabled={isLoading}>
+      <!-- MODIFICATO: Passiamo la prop `loading` al Button per mostrare lo spinner -->
+      <Button type="submit" variant="primary" loading={isLoading} disabled={isLoading}>
         {isLoading ? 'Salvataggio...' : 'Salva Log'}
       </Button>
     </div>

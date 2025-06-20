@@ -3,7 +3,14 @@
   import Button from '../ui/Button.svelte';
   import PlusIcon from '../ui/icons/PlusIcon.svelte';
   import ConfirmationModal from '../modals/ConfirmationModal.svelte';
-  import { mockApi } from '../../services/mockData.js';
+
+  // RIMOSSO: `mockApi` non è più usato direttamente
+  // import { mockApi } from '../../services/mockData.js';
+  
+  // AGGIUNTO: Le nostre dipendenze per API e notifiche
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+
   import { createEventDispatcher } from 'svelte';
   
   export let plantId;
@@ -26,14 +33,41 @@
     return new Date(dateString).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
+  function handleDeleteClick(log) {
+    logToDelete = log;
+    isConfirmDeleteOpen = true;
+  }
+
+  // --- MODIFICA PRINCIPALE: confirmDelete ---
   async function confirmDelete() {
     if (!logToDelete) return;
     isLoadingDelete = true;
-    await mockApi.deleteHealthLog(plantId, logToDelete.id);
-    isLoadingDelete = false;
-    isConfirmDeleteOpen = false;
-    logToDelete = null;
-    onUpdate();
+    
+    try {
+      // 1. Chiamiamo la nostra API centralizzata
+      await api.deleteHealthLog(plantId, logToDelete.id);
+
+      // 2. Notifica di successo
+      toast.push('Nota sulla salute eliminata.', { type: 'success' });
+      
+      // 3. Chiudiamo la modale e aggiorniamo la UI
+      isConfirmDeleteOpen = false;
+      onUpdate();
+
+    } catch (e) {
+      console.error("Errore durante l'eliminazione della nota:", e);
+      toast.push(e.message || 'Impossibile eliminare la nota.', { type: 'error' });
+    } finally {
+      isLoadingDelete = false;
+      logToDelete = null;
+    }
+  }
+
+  // AGGIUNTO: Gestione click sull'immagine (semplice per ora)
+  function viewImage(url) {
+    // In un'implementazione futura, questo potrebbe aprire ImageViewerModal.
+    // Per ora, apriamo l'immagine in una nuova scheda.
+    window.open(url, '_blank');
   }
 </script>
 
@@ -76,13 +110,16 @@
                 </span>
               {/if}
             </div>
-            <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-100 -mr-2 -mt-2" on:click={() => { logToDelete = log; isConfirmDeleteOpen = true; }}>
+            <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-100 -mr-2 -mt-2" on:click={() => handleDeleteClick(log)}>
               Elimina
             </Button>
           </div>
           <p class="mt-2 text-gray-700 dark:text-gray-300">{log.notes}</p>
           {#if log.photo_url}
-            <img src={log.photo_url} alt="Foto nota salute" class="mt-3 rounded-lg max-h-48 cursor-pointer" on:click={() => alert('Apri visualizzatore foto!')}>
+            <!-- MODIFICATO: Collegato on:click a una funzione reale -->
+            <button on:click={() => viewImage(log.photo_url)} class="mt-3 block">
+              <img src={log.photo_url} alt="Foto nota salute" class="rounded-lg max-h-48 cursor-pointer hover:opacity-80 transition-opacity">
+            </button>
           {/if}
         </div>
       {/each}

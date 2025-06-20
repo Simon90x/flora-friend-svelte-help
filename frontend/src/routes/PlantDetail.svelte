@@ -1,8 +1,13 @@
 <script>
   import { onMount } from 'svelte';
-  import { user, selectedPlant } from '../lib/stores/index.js';
-  import { mockApi } from '../lib/services/mockData.js';
+  // import { user, selectedPlant } from '../lib/stores/index.js';
+  // import { mockApi } from '../lib/services/mockData.js';
   import { link, push } from 'svelte-spa-router';
+  import { selectedPlant } from '../lib/stores/index.js';
+
+  // Le e
+  import { api } from '../lib/services/api.js';
+  import { toast } from '../lib/stores/notifications.js';
 
   // Componenti UI e Modali
   import TabGroup from '../lib/components/ui/TabGroup.svelte';
@@ -25,6 +30,7 @@
   import PlantDetailSkeleton from '../lib/components/skeletons/PlantDetailSkeleton.svelte';
 
   import SpinnerIcon from '../lib/components/ui/icons/SpinnerIcon.svelte'; // 1. Importa lo spinner
+  import AskAdviceForm from '../lib/components/forms/AskAdviceForm.svelte';
 
   export let params = {};
 
@@ -40,6 +46,10 @@
   let isDeletingPlant = false;
   let isImageViewerOpen = false;
   let imageViewerSource = null; // Sarà una singola immagine o un array
+
+  let isAskAdviceModalOpen = false;
+  let viewerStartIndex = 0;
+
   async function loadPlantDetails(plantId, isInitialLoad = false) {
     if (!plantId) {
       error = 'ID della pianta non fornito.';
@@ -58,12 +68,11 @@
     try {
       // Aggiungiamo un piccolo ritardo fittizio per rendere visibile l'effetto
       // In un'app reale non servirebbe, ma qui aiuta a vedere lo spinner.
-      await new Promise((res) => setTimeout(res, 500));
 
-      const data = await mockApi.getPlantDetails(plantId);
+      const data = await api.getPlantDetails(plantId);
       if (data) {
         plantDetails = data;
-        selectedPlant.set(plantDetails);
+        selectedPlant.set(plantDetails); // Questo store potrebbe non essere più necessario, ma lo teniamo per ora
       } else {
         error = `Nessuna pianta trovata con ID: ${plantId}`;
         plantDetails = null;
@@ -72,11 +81,10 @@
       console.error('Errore nel caricamento dei dettagli della pianta:', e);
       error = 'Si è verificato un errore durante il caricamento dei dati.';
       plantDetails = null;
+      toast.push(e.message || error, { type: 'error' });
     } finally {
-      if (isInitialLoad) {
-        isLoading = false;
-      }
-      isRevalidating = false; // Disattiva sempre l'indicatore alla fine
+      isLoading = false;
+      isRevalidating = false;
     }
   }
 
@@ -86,15 +94,24 @@
   }
 
   async function handleDeletePlant() {
+    if (!plantDetails) return;
     isDeletingPlant = true;
-    await mockApi.deletePlant(plantDetails.id);
-    isDeletingPlant = false;
-    isDeletePlantModalOpen = false;
-    push('/dashboard');
+    try {
+      // Sostituita la chiamata a mockApi con la nostra API
+      await api.deletePlant(plantDetails.id);
+      toast.push(`Pianta "${plantDetails.name}" eliminata.`, { type: 'success' });
+      isDeletePlantModalOpen = false;
+      push('/dashboard');
+    } catch (e) {
+      console.error("Errore durante l'eliminazione:", e);
+      toast.push(e.message || 'Impossibile eliminare la pianta.', { type: 'error' });
+    } finally {
+      isDeletingPlant = false;
+    }
   }
 
   function handleUpdate() {
-    loadPlantDetails(plantDetails.id, false); // Le volte successive NON sono un caricamento iniziale
+    loadPlantDetails(plantDetails.id, false);
   }
 
   function openCoverImageViewer() {
@@ -102,12 +119,11 @@
     isImageViewerOpen = true;
   }
 
-  
-function openImageViewer(event) {
+  function openImageViewer(event) {
     imageViewerSource = event.detail.images;
     viewerStartIndex = event.detail.startIndex || 0;
     isImageViewerOpen = true;
-}
+  }
 
   const TABS = ['Log Crescita', 'Diario Foto', 'Salute', 'Consigli IA'];
   $: breadcrumbItems = plantDetails
@@ -126,8 +142,6 @@ function openImageViewer(event) {
           href: '/dashboard',
         },
       ];
-
-
 </script>
 
 {#if isLoading}
@@ -170,6 +184,17 @@ function openImageViewer(event) {
       on:close={() => (isAddHealthLogModalOpen = false)}
       onSuccess={() => {
         isAddHealthLogModalOpen = false;
+        handleUpdate();
+      }}
+    />
+  </Modal>
+
+  <Modal isOpen={isAskAdviceModalOpen} onClose={() => (isAskAdviceModalOpen = false)} size="lg">
+    <AskAdviceForm
+      plant={plantDetails}
+      on:close={() => (isAskAdviceModalOpen = false)}
+      onSuccess={() => {
+        isAskAdviceModalOpen = false;
         handleUpdate();
       }}
     />
@@ -255,7 +280,7 @@ function openImageViewer(event) {
               onUpdate={handleUpdate}
             />
           {:else if activeTab === TABS[1]}
-            <PhotoDiaryTab logs={plantDetails.logs}  on:openImageViewer={openImageViewer} />
+            <PhotoDiaryTab logs={plantDetails.logs} on:openImageViewer={openImageViewer} />
           {:else if activeTab === TABS[2]}
             <PlantHealthTab
               plantId={plantDetails.id}
@@ -267,7 +292,7 @@ function openImageViewer(event) {
             <AiAdviceTab
               plantId={plantDetails.id}
               aiAdvices={plantDetails.aiAdvices}
-              on:askAdvice={() => alert('Apri modale AskAdvice')}
+              on:askAdvice={() => (isAskAdviceModalOpen = true)} 
               onUpdate={handleUpdate}
             />
           {/if}

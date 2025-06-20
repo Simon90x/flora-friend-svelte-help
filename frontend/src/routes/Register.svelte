@@ -77,7 +77,7 @@
   <!-- Link Login -->
   <div class="text-center mt-6">
     <p class="text-sm text-gray-600 dark:text-gray-400">
-      Hai giÃ  un account?
+      Hai già  un account?
       <a href="/login" use:link class="font-medium text-green-600 hover:text-green-500">
         Accedi
       </a>

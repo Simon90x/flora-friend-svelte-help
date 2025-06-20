@@ -86,7 +86,7 @@
         on:click={handleDemoLogin}
         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
       >
-        Accedi in modalitÃ  demo
+        Accedi in modalità  demo
       </button>
     </div>
   </form>

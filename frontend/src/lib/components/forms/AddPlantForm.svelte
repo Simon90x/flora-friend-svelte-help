@@ -1,109 +1,108 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { user } from '../../stores/index.js';
-  import { mockApi } from '../../services/mockData.js';
-  import { supabase } from '../../services/supabaseClient.js';
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+  // Importiamo la funzione aggiornata per Pl@ntNet
+  import { suggestSpeciesFromImage } from '../../services/imageClassifier.js';
+
   import ImageInput from '../ui/ImageInput.svelte';
   import Button from '../ui/Button.svelte';
-  import { slide } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
 
   export let onSuccess = () => {};
 
+  // Stato del form
   let plantName = '';
   let plantSpecies = '';
   let acquisitionDate = new Date().toISOString().split('T')[0];
   let notes = '';
   let coverImageBase64 = null;
 
+  // Stato per l'API di identificazione
+  // Questo ora conterrà i suggerimenti formattati da Pl@ntNet
+  let suggestions = [];
+  let isSuggesting = false;
+
+  // Stato per il submit del form
   let isLoading = false;
   let error = '';
-
-  // Stato per la funzione AI
-  let isSuggesting = false;
-  let suggestion = null;
 
   const dispatch = createEventDispatcher();
 
   function handleImage(event) {
     coverImageBase64 = event.detail.base64;
-    suggestion = null; // Resetta il suggerimento se l'immagine cambia
+    suggestions = []; // Resetta i suggerimenti quando l'immagine cambia
   }
 
+  // --- Funzione MODIFICATA per Pl@ntNet ---
   async function handleSuggestSpecies() {
     if (!coverImageBase64) return;
     isSuggesting = true;
-    suggestion = null;
     error = '';
+    suggestions = [];
+
     try {
-        const result = await mockApi.suggestSpecies(coverImageBase64);
-        suggestion = result;
+      // Chiamiamo la funzione che ora contatta Pl@ntNet
+      const result = await suggestSpeciesFromImage(coverImageBase64);
+
+      // Gestiamo la struttura della risposta di Pl@ntNet
+      if (result && result.results?.length > 0) {
+        
+        // Formattiamo i risultati in un array più semplice da usare nella UI
+        suggestions = result.results.map(r => ({
+          commonName: r.species.commonNames[0] || r.species.scientificNameWithoutAuthor,
+          scientificName: r.species.scientificNameWithoutAuthor,
+          score: r.score,
+        }));
+
+        // Pre-compiliamo i campi del form con il suggerimento migliore (il primo della lista)
+        const topSuggestion = suggestions[0];
+        plantName = topSuggestion.commonName;
+        plantSpecies = topSuggestion.scientificName;
+        
+        toast.push(`Pianta identificata come "${topSuggestion.commonName}"!`, { type: 'success' });
+
+      } else {
+        toast.push('Nessuna pianta identificata in questa immagine.', { type: 'info' });
+      }
     } catch (e) {
-        error = 'Servizio AI non disponibile al momento.';
+      error = e.message;
+      toast.push(error, { type: 'error' });
     } finally {
-        isSuggesting = false;
+      isSuggesting = false;
     }
   }
 
-  function applySuggestion() {
-    if (suggestion && suggestion.species) {
-        plantSpecies = suggestion.species;
-        plantSpecies = plantSpecies;
-
-        suggestion = null; // Nascondi il suggerimento
-        isSuggesting = false; // Resetta lo stato del pulsante
-    }
+  // --- NUOVA Funzione per applicare un suggerimento dalla lista ---
+  function applySuggestion(suggestionToApply) {
+    plantName = suggestionToApply.commonName;
+    plantSpecies = suggestionToApply.scientificName;
+    toast.push(`Specie aggiornata a "${suggestionToApply.commonName}".`, { type: 'info' });
   }
 
+  // La funzione per salvare la pianta rimane invariata
   async function handleSubmit() {
     if (!plantName.trim()) {
       error = 'Il nome della pianta è obbligatorio.';
       return;
     }
-
     isLoading = true;
     error = '';
-
     try {
-      if ($user.id === 'demo-user') {
-        await mockApi.addPlant({
-          name: plantName,
-          species: plantSpecies,
-          date_added: acquisitionDate,
-          notes: notes,
-          cover_image_url: coverImageBase64 || 'https://placehold.co/400x300/e2e8f0/4a5568?text=No+Image',
-        });
-      } else {
-        // Logica reale per Supabase
-        let imageUrl = null;
-        if (coverImageBase64) {
-          const fileName = `public/${$user.id}/${Date.now()}.jpg`;
-          const response = await fetch(coverImageBase64);
-          const blob = await response.blob();
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('plant-images')
-            .upload(fileName, blob);
-          if (uploadError) throw uploadError;
-          const { data: urlData } = supabase.storage
-            .from('plant-images')
-            .getPublicUrl(uploadData.path);
-          imageUrl = urlData.publicUrl;
-        }
-
-        const { error: insertError } = await supabase.from('plants').insert({
-          user_id: $user.id,
-          name: plantName,
-          species: plantSpecies,
-          date_added: acquisitionDate,
-          notes: notes,
-          cover_image_url: imageUrl,
-        });
-        if (insertError) throw insertError;
-      }
+      const plantData = {
+        name: plantName,
+        species: plantSpecies,
+        date_added: acquisitionDate,
+        notes: notes,
+      };
+      await api.addPlant(plantData, coverImageBase64);
+      toast.push(`Pianta "${plantName}" aggiunta con successo!`, { type: 'success' });
       onSuccess();
       dispatch('close');
     } catch (e) {
       console.error('Errore nel salvataggio della pianta:', e);
       error = e.message || 'Si è verificato un errore imprevisto.';
+      toast.push(error, { type: 'error' });
     } finally {
       isLoading = false;
     }
@@ -111,66 +110,128 @@
 </script>
 
 <div class="p-6">
-  <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Aggiungi una nuova pianta</h2>
-  
+  <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+    Aggiungi una nuova pianta
+  </h2>
+
   <form on:submit|preventDefault={handleSubmit} class="space-y-4">
-    <div class="relative">
-        <ImageInput label="Immagine di Copertina" on:imageChange={handleImage} />
-        
-        {#if suggestion && suggestion.species}
-            <div 
-                class="absolute bottom-10 left-10 right-10 bg-black/70 p-3 rounded-lg text-white text-center cursor-pointer hover:bg-black/90 backdrop-blur-sm"
-                on:click={applySuggestion}
-                role="button"
-                tabindex="0"
-                on:keydown={(e) => {if(e.key === 'Enter') applySuggestion()}}
-                transition:slide={{duration: 200}}
-            >
-                <p class="font-bold text-lg">{suggestion.species}</p>
-                <p class="text-sm opacity-80">Clicca per usare questo nome</p>
-            </div>
-        {/if}
-    </div>
     
-    {#if coverImageBase64 && !suggestion}
-        <div transition:fade={{duration:150}}>
-            <Button 
-                type="button" 
-                variant="secondary" 
-                on:click={handleSuggestSpecies}
-                disabled={isSuggesting}
-            >
-                {isSuggesting ? 'Analisi in corso...' : 'Suggerisci Specie (AI)'}
-            </Button>
-        </div>
+    <!-- ImageInput non ha più bisogno di ricevere le predizioni,
+         non disegneremo più i bounding box per questa versione con Pl@ntNet -->
+    <ImageInput 
+      label="Immagine di Copertina" 
+      on:imageChange={handleImage} 
+    />
+
+    <!-- Mostra il pulsante "Identifica" solo se abbiamo un'immagine ma non ancora dei suggerimenti -->
+    {#if coverImageBase64 && suggestions.length === 0}
+      <div transition:fade={{ duration: 150 }}>
+        <Button
+          type="button"
+          variant="secondary"
+          on:click={handleSuggestSpecies}
+          loading={isSuggesting}
+        >
+          {isSuggesting ? 'Analisi in corso...' : 'Identifica Specie'}
+        </Button>
+      </div>
     {/if}
 
+    <!-- NUOVO BLOCCO: Mostra la lista dei suggerimenti dopo l'identificazione -->
+    {#if suggestions.length > 0}
+      <div class="mt-4 space-y-2 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg" transition:fade>
+        <h4 class="font-semibold text-gray-800 dark:text-gray-200">Suggerimenti dall'IA:</h4>
+        <ul class="space-y-2">
+          <!-- Mostriamo fino a 3 suggerimenti -->
+          {#each suggestions.slice(0, 3) as s (s.scientificName)}
+            <li>
+              <button 
+                type="button"
+                on:click={() => applySuggestion(s)}
+                class="w-full text-left p-2 rounded-md hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
+              >
+                <div class="flex justify-between items-center">
+                  <span>
+                    <span class="font-medium text-gray-900 dark:text-gray-100">{s.commonName}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400 italic block">{s.scientificName}</span>
+                  </span>
+                  <span class="text-sm font-semibold text-green-600">
+                    {(s.score * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+    
     <div>
-      <label for="plant-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome Pianta</label>
-      <input type="text" id="plant-name" bind:value={plantName} required class="mt-1 w-full input" placeholder="Es. Monstera del salotto">
+      <label for="plant-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >Nome Pianta</label
+      >
+      <input
+        type="text"
+        id="plant-name"
+        bind:value={plantName}
+        required
+        class="mt-1 w-full input"
+        placeholder="Es. Monstera del salotto"
+      />
     </div>
 
     <div>
-      <label for="plant-species" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Specie</label>
-      <input type="text" id="plant-species" bind:value={plantSpecies} class="mt-1 w-full input" placeholder="Es. Monstera deliciosa">
+      <label
+        for="plant-species"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Specie (Nome Scientifico)</label
+      >
+      <input
+        type="text"
+        id="plant-species"
+        bind:value={plantSpecies}
+        class="mt-1 w-full input"
+        placeholder="Es. Monstera deliciosa"
+      />
     </div>
 
     <div>
-      <label for="acquisition-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Data di Acquisizione</label>
-      <input type="date" id="acquisition-date" bind:value={acquisitionDate} class="mt-1 w-full input">
+      <label
+        for="acquisition-date"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >Data di Acquisizione</label
+      >
+      <input
+        type="date"
+        id="acquisition-date"
+        bind:value={acquisitionDate}
+        class="mt-1 w-full input"
+      />
     </div>
 
     <div>
-      <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Note</label>
-      <textarea id="notes" bind:value={notes} rows="3" class="mt-1 w-full input" placeholder="Provenienza, cure particolari..."></textarea>
+      <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >Note</label
+      >
+      <textarea
+        id="notes"
+        bind:value={notes}
+        rows="3"
+        class="mt-1 w-full input"
+        placeholder="Provenienza, cure particolari..."
+      ></textarea>
     </div>
 
-    {#if error}
+    {#if error && !isSuggesting}
       <p class="text-sm text-red-600" role="alert">{error}</p>
     {/if}
 
     <div class="flex justify-end space-x-3 pt-4">
-      <Button type="button" variant="ghost" on:click={() => dispatch('close')} disabled={isLoading}>
+      <Button
+        type="button"
+        variant="ghost"
+        on:click={() => dispatch('close')}
+        disabled={isLoading}
+      >
         Annulla
       </Button>
       <Button type="submit" variant="primary" loading={isLoading}>

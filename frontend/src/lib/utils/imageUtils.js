@@ -38,3 +38,31 @@ export function resizeAndCompressImage(file, options = { maxWidth: 800, quality:
     reader.onerror = (error) => reject(error);
   });
 }
+
+
+/**
+ * NUOVA FUNZIONE AGGIUNTA E ESPORTATA
+ * Converte una stringa base64 in un oggetto Blob.
+ * @param {string} base64 - La stringa data URL (es. 'data:image/jpeg;base64,...').
+ * @returns {Blob | null}
+ */
+export function base64ToBlob(base64) {
+  if (!base64 || !base64.startsWith('data:image')) return null;
+  const parts = base64.split(',');
+  const contentType = parts[0].split(':')[1].split(';')[0];
+  const byteCharacters = atob(parts[1]);
+  const byteArrays = [];
+
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+
+  return new Blob(byteArrays, { type: contentType });
+}
+

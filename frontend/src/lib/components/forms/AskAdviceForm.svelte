@@ -1,6 +1,13 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
-  import { mockApi } from '../../services/mockData.js';
+  // RIMOSSO: `mockApi` non è più usato direttamente
+  // import { mockApi } from '../../services/mockData.js';
+  
+  // AGGIUNTO: Le nostre nuove dipendenze
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+
+  // Importazioni componenti UI (invariate)
   import Button from '../ui/Button.svelte';
   import HorizontalScroller from '../ui/HorizontalScroller.svelte';
 
@@ -15,17 +22,18 @@
   
   const dispatch = createEventDispatcher();
   
-  // Estrai tutte le foto uniche dai log della pianta
-  $: photoDiary = Array.from(new Set(plant.logs.map(log => log.photo_url).filter(Boolean)));
+  // Questa logica rimane invariata, ma ora usa `plant.growth_logs`
+  $: photoDiary = Array.from(new Set(plant.growth_logs.map(log => log.photo_url).filter(Boolean)));
 
   function selectImage(url, index) {
       if (selectedImage?.url === url) {
-          selectedImage = null; // Deseleziona se clicco la stessa immagine
+          selectedImage = null;
       } else {
           selectedImage = { url, index };
       }
   }
 
+  // --- MODIFICA PRINCIPALE: handleSubmit ---
   async function handleSubmit() {
     if (!question.trim()) {
       error = 'Per favore, inserisci una domanda.';
@@ -34,14 +42,24 @@
     isLoading = true;
     error = '';
     try {
-      await mockApi.addAiAdvice(plant.id, {
+      // 1. Prepariamo i dati per la nostra API
+      const adviceData = {
         question: question,
-        image_url: selectedImage?.url || null,
-      });
+        image_url: selectedImage?.url || null, // Passiamo l'URL dell'immagine selezionata
+      };
+      
+      // 2. Chiamiamo la funzione centralizzata
+      await api.addAiAdvice(plant.id, adviceData);
+      
+      // 3. Notifica di successo e chiusura
+      toast.push('Domanda inviata! La risposta apparirà a breve.', { type: 'success' });
       onSuccess();
       dispatch('close');
+
     } catch (e) {
-      error = 'Servizio AI non disponibile al momento.';
+      console.error('Errore durante l\'invio della domanda:', e);
+      error = e.message || 'Servizio AI non disponibile al momento.';
+      toast.push(error, { type: 'error' });
     } finally {
       isLoading = false;
     }
@@ -83,7 +101,8 @@
 
     <div class="flex justify-end space-x-3 pt-4">
       <Button type="button" variant="ghost" on:click={() => dispatch('close')} disabled={isLoading}>Annulla</Button>
-      <Button type="submit" variant="primary" disabled={isLoading}>
+      <!-- MODIFICATO: Aggiunta la prop `loading` per lo spinner -->
+      <Button type="submit" variant="primary" loading={isLoading} disabled={isLoading}>
         {isLoading ? 'Invio in corso...' : 'Invia Domanda'}
       </Button>
     </div>

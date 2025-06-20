@@ -2,15 +2,21 @@
   import EmptyState from '../ui/EmptyState.svelte';
   import Button from '../ui/Button.svelte';
   import PlusIcon from '../ui/icons/PlusIcon.svelte';
-  import ConfirmationModal from '../modals/ConfirmationModal.svelte';
-  import ImageViewerModal from '../modals/ImageViewerModal.svelte';
-  import { mockApi } from '../../services/mockData.js';
-  import { createEventDispatcher } from 'svelte';
-  import { fly } from 'svelte/transition'; // 1. Importa fly
-  import { flip } from 'svelte/animate'; // 2. Importa flip
-
   import PencilIcon from '../ui/icons/PencilIcon.svelte';
   import TrashIcon from '../ui/icons/TrashIcon.svelte';
+  import ConfirmationModal from '../modals/ConfirmationModal.svelte';
+  import ImageViewerModal from '../modals/ImageViewerModal.svelte';
+  
+  // RIMOSSO: `mockApi` non è più la dipendenza diretta
+  // import { mockApi } from '../../services/mockData.js';
+  
+  // AGGIUNTO: Le nostre nuove dipendenze per API e notifiche
+  import { api } from '../../services/api.js';
+  import { toast } from '../../stores/notifications.js';
+
+  import { createEventDispatcher } from 'svelte';
+  import { fly } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
 
   export let plantId;
   export let logs = [];
@@ -22,7 +28,6 @@
   let isConfirmDeleteOpen = false;
   let isLoadingDelete = false;
 
-  // Stato per il visualizzatore immagini
   let isViewerOpen = false;
   let viewerStartIndex = 0;
   $: photoUrls = logs.map((log) => log.photo_url).filter(Boolean);
@@ -40,14 +45,29 @@
     isConfirmDeleteOpen = true;
   }
 
+  // --- MODIFICA PRINCIPALE: confirmDelete ---
   async function confirmDelete() {
     if (!logToDelete) return;
+
     isLoadingDelete = true;
-    await mockApi.deleteGrowthLog(plantId, logToDelete.id);
-    isLoadingDelete = false;
-    isConfirmDeleteOpen = false;
-    logToDelete = null;
-    onUpdate();
+    try {
+      // 1. Chiamiamo la nostra API centralizzata per eliminare il log
+      await api.deleteGrowthLog(plantId, logToDelete.id);
+
+      // 2. Notifica di successo
+      toast.push('Log eliminato con successo.', { type: 'success' });
+
+      // 3. Chiudiamo la modale e aggiorniamo la UI del genitore
+      isConfirmDeleteOpen = false;
+      onUpdate();
+
+    } catch (e) {
+      console.error("Errore durante l'eliminazione del log:", e);
+      toast.push(e.message || 'Impossibile eliminare il log.', { type: 'error' });
+    } finally {
+      isLoadingDelete = false;
+      logToDelete = null;
+    }
   }
 
   function openImageViewer(index) {
